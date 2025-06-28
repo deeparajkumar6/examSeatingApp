@@ -1,0 +1,14 @@
+roomNumber,roomCapacity,roomFloor,roomBuilding
+Room 101,30,Ground Floor,Main Building
+Room 102,25,Ground Floor,Main Building
+Room 103,28,Ground Floor,Main Building
+Room 201,35,First Floor,Main Building
+Room 202,32,First Floor,Main Building
+Room 203,30,First Floor,Main Building
+Lab A,20,Ground Floor,Science Building
+Lab B,22,Ground Floor,Science Building
+Lab C,18,First Floor,Science Building
+Auditorium A,100,Ground Floor,Auditorium Building
+Auditorium B,80,First Floor,Auditorium Building
+Computer Lab 1,25,Second Floor,IT Building
+Computer Lab 2,30,Second Floor,IT Building

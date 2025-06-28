@@ -1,10 +1,9 @@
 <template>
-    <v-container>
-      <ExamRoomCrud />
-    </v-container>
-  </template>
-  
-  <script setup>
-    //
-  </script>
-  
+  <v-container>
+    <ExamRoomCrud />
+  </v-container>
+</template>
+
+<script setup>
+//
+</script>

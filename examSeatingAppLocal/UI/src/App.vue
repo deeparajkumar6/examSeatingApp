@@ -2,29 +2,45 @@
   <v-app>
     <!-- Top App Bar -->
     <v-app-bar color="primary" dark>
-      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+      <v-app-bar-nav-icon @click="drawer = !drawer" />
       <v-toolbar-title>College Room Manager</v-toolbar-title>
     </v-app-bar>
     <!-- Navigation Drawer -->
     <v-navigation-drawer v-model="drawer">
       <v-list dense nav>
-        <v-list-item to="/" active-class="active-item">
-          <template v-slot:prepend>
-            <v-icon color="primary">mdi-school</v-icon>
+        <v-list-item active-class="active-item" to="/">
+          <template #prepend>
+            <v-icon color="primary">
+              mdi-school
+            </v-icon>
           </template>
           <v-list-item-title>Classes</v-list-item-title>
         </v-list-item>
 
-        <v-list-item to="/exam-rooms" router exact active-class="active-item">
-          <template v-slot:prepend>
-            <v-icon color="primary">mdi-door</v-icon>
+        <v-list-item
+          active-class="active-item"
+          exact
+          router
+          to="/exam-rooms"
+        >
+          <template #prepend>
+            <v-icon color="primary">
+              mdi-door
+            </v-icon>
           </template>
           <v-list-item-title>Exam Rooms</v-list-item-title>
         </v-list-item>
 
-        <v-list-item to="/schedule" router exact active-class="active-item">
-          <template v-slot:prepend>
-            <v-icon color="primary">mdi-calendar-check</v-icon>
+        <v-list-item
+          active-class="active-item"
+          exact
+          router
+          to="/schedule"
+        >
+          <template #prepend>
+            <v-icon color="primary">
+              mdi-calendar-check
+            </v-icon>
           </template>
           <v-list-item-title>Room Schedule</v-list-item-title>
         </v-list-item>
@@ -42,7 +58,7 @@
 
 <script>
 export default {
-  data() {
+  data () {
     return {
       drawer: true,
     };

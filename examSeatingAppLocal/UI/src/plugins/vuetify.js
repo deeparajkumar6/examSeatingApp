@@ -11,7 +11,6 @@ import 'vuetify/styles'
 // Composables
 import { createVuetify } from 'vuetify'
 
-
 const myCustomLightTheme = {
   dark: false,
   colors: {
@@ -28,7 +27,7 @@ const myCustomLightTheme = {
     error: '#B00020',
     info: '#2196F3',
     success: '#4CAF50',
-    warning: '#FB8C00',
+    warning: '#FB8C00'
   },
   // variables: {
   //   'border-color': '#000000',
@@ -55,7 +54,7 @@ export default createVuetify({
   theme: {
     defaultTheme: 'myCustomLightTheme',
     themes: {
-      myCustomLightTheme,
+      myCustomLightTheme
     },
-  },
+  }
 })

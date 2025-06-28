@@ -8,13 +8,8 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AppFooter: typeof import('./src/components/AppFooter.vue')['default']
     ClassCrud: typeof import('./src/components/ClassCrud.vue')['default']
-    copy: typeof import('./src/components/ClassCrud copy.vue')['default']
-    ExamRoom: typeof import('./src/components/ExamRoom.vue')['default']
     ExamRoomCrud: typeof import('./src/components/ExamRoomCrud.vue')['default']
-    HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
-    NavigationDrawer: typeof import('./src/components/NavigationDrawer.vue')['default']
     RoomSchedule: typeof import('./src/components/RoomSchedule.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

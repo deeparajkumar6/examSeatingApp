@@ -1,0 +1,35 @@
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle with college primary color -->
+  <circle cx="40" cy="40" r="38" fill="#ab3d31" stroke="#8b2f25" stroke-width="2"/>
+  
+  <!-- Inner decorative circle -->
+  <circle cx="40" cy="40" r="32" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.3"/>
+  
+  <!-- Book/Education symbol -->
+  <rect x="25" y="22" width="30" height="18" fill="white" rx="2"/>
+  <rect x="27" y="24" width="26" height="14" fill="#f3e5e4" rx="1"/>
+  
+  <!-- Lines representing text/knowledge -->
+  <line x1="30" y1="27" x2="50" y2="27" stroke="#ab3d31" stroke-width="1.5"/>
+  <line x1="30" y1="30" x2="47" y2="30" stroke="#ab3d31" stroke-width="1"/>
+  <line x1="30" y1="33" x2="49" y2="33" stroke="#ab3d31" stroke-width="1"/>
+  <line x1="30" y1="36" x2="45" y2="36" stroke="#ab3d31" stroke-width="1"/>
+  
+  <!-- Graduation cap -->
+  <polygon points="22,45 58,45 54,50 26,50" fill="white"/>
+  <rect x="38" y="42" width="4" height="8" fill="white"/>
+  <circle cx="42" cy="42" r="2" fill="white"/>
+  
+  <!-- Tassel -->
+  <line x1="44" y1="42" x2="48" y2="38" stroke="white" stroke-width="1"/>
+  <circle cx="48" cy="38" r="1" fill="#000063"/>
+  
+  <!-- College initials or symbol -->
+  <text x="40" y="65" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">SJCW</text>
+  
+  <!-- Decorative elements -->
+  <circle cx="15" cy="25" r="2" fill="white" opacity="0.6"/>
+  <circle cx="65" cy="25" r="2" fill="white" opacity="0.6"/>
+  <circle cx="15" cy="55" r="2" fill="white" opacity="0.6"/>
+  <circle cx="65" cy="55" r="2" fill="white" opacity="0.6"/>
+</svg>
