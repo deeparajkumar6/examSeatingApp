@@ -32,7 +32,8 @@ def init_database():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS classes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        className TEXT NOT NULL
+        className TEXT NOT NULL,
+        shift TEXT
     )
     """)
 
@@ -41,6 +42,8 @@ def init_database():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         rollNumber TEXT NOT NULL,
         studentName TEXT,
+        language TEXT,
+        dateOfBirth TEXT,
         classId INTEGER NOT NULL,
         FOREIGN KEY (classId) REFERENCES classes (id) ON DELETE CASCADE,
         UNIQUE(rollNumber, classId)
@@ -56,6 +59,22 @@ def init_database():
         roomBuilding TEXT NOT NULL
     )
     """)
+    
+    # Add new columns to existing tables if they don't exist
+    try:
+        cursor.execute("ALTER TABLE classes ADD COLUMN shift TEXT")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+    
+    try:
+        cursor.execute("ALTER TABLE students ADD COLUMN language TEXT")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+        
+    try:
+        cursor.execute("ALTER TABLE students ADD COLUMN dateOfBirth TEXT")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
     
     conn.commit()
     conn.close()

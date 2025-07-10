@@ -4,7 +4,8 @@
       <v-text-field
         :model-value="displayDate"
         label="Select Exam Date"
-        prepend-icon="mdi-calendar"
+        variant="outlined"
+        prepend-inner-icon="mdi-calendar"
         readonly
         v-bind="props"
         :rules="[rules.required]"

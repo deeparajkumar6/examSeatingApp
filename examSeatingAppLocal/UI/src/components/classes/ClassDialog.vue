@@ -7,12 +7,25 @@
 
       <v-card-text>
         <v-form ref="form" v-model="valid">
-          <v-text-field
-            v-model="formData.className"
-            label="Class Name"
-            :rules="[rules.required]"
-            required
-          />
+          <v-row>
+            <v-col cols="12" md="8">
+              <v-text-field
+                v-model="formData.className"
+                label="Class Name"
+                variant="outlined"
+                :rules="[rules.required]"
+                required
+              />
+            </v-col>
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model="formData.shift"
+                label="Shift (Optional)"
+                variant="outlined"
+                placeholder="e.g., I, II, Morning, Evening"
+              />
+            </v-col>
+          </v-row>
 
           <v-divider class="my-4" />
 
@@ -85,6 +98,7 @@ const dialogModel = computed({
 
 const formData = ref({
   className: "",
+  shift: "",
   students: [],
 });
 
@@ -95,9 +109,11 @@ const rules = {
 const resetForm = () => {
   formData.value = {
     className: "",
+    shift: "",
     students: [],
   };
 };
+
 // Watch for prop changes
 watch(
   () => props.classData,
@@ -105,6 +121,7 @@ watch(
     if (newData) {
       formData.value = {
         ...newData,
+        shift: newData.shift || "",
         students: [...(newData.students || [])],
       };
     } else {
@@ -118,6 +135,8 @@ const addStudent = () => {
   formData.value.students.push({
     rollNumber: "",
     studentName: "",
+    language: "",
+    dateOfBirth: "",
   });
 };
 

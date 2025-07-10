@@ -1,7 +1,10 @@
 <template>
   <v-container>
     <v-card>
-      <ClassHeader @add-class="openAddDialog" />
+      <ClassHeader 
+        @add-class="openAddDialog" 
+        @import-excel="openImportDialog"
+      />
       <ClassTable 
         :classes="classes"
         :loading="loading"
@@ -17,23 +20,35 @@
       :edit-mode="classDialog.editMode"
       @save="handleSaveClass"
     />
+
+    <ExcelImportDialog
+      v-model="importDialog.show"
+      @import-success="handleImportSuccess"
+    />
   </v-container>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useClassesStore } from '@/stores/classes'
+import { useAppStore } from '@/stores/app'
 import ClassHeader from './ClassHeader.vue'
 import ClassTable from './ClassTable.vue'
 import ClassDialog from './ClassDialog.vue'
+import ExcelImportDialog from './ExcelImportDialog.vue'
 
 const classesStore = useClassesStore()
+const appStore = useAppStore()
 
 // Reactive data
 const classDialog = ref({
   show: false,
   data: null,
   editMode: false
+})
+
+const importDialog = ref({
+  show: false
 })
 
 // Computed
@@ -57,6 +72,10 @@ const openEditDialog = (classData) => {
   }
 }
 
+const openImportDialog = () => {
+  importDialog.value.show = true
+}
+
 const handleSaveClass = async (classData) => {
   try {
     if (classDialog.value.editMode) {
@@ -74,6 +93,13 @@ const handleDeleteClass = async (classId) => {
   if (confirm('Are you sure you want to delete this class?')) {
     await classesStore.deleteClass(classId)
   }
+}
+
+const handleImportSuccess = async () => {
+  // Refresh classes after successful import
+  await classesStore.fetchClasses()
+  importDialog.value.show = false
+  appStore.showSuccess('Classes imported successfully!')
 }
 
 // Lifecycle

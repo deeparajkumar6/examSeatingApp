@@ -1,12 +1,27 @@
 <template>
   <v-chip-group>
-    <v-chip
+    <v-tooltip
       v-for="student in displayStudents"
       :key="student.id"
-      size="small"
+      location="top"
     >
-      {{ student.rollNumber }}
-    </v-chip>
+      <template #activator="{ props: tooltipProps }">
+        <v-chip
+          v-bind="tooltipProps"
+          size="small"
+          :color="student.language ? 'primary' : 'default'"
+          :variant="student.language ? 'outlined' : 'flat'"
+        >
+          {{ student.rollNumber }}
+        </v-chip>
+      </template>
+      <div>
+        <div><strong>{{ student.studentName || 'No name' }}</strong></div>
+        <div v-if="student.language">Language: {{ student.language }}</div>
+        <div v-if="student.dateOfBirth">DOB: {{ formatDate(student.dateOfBirth) }}</div>
+      </div>
+    </v-tooltip>
+    
     <v-chip
       v-if="hasMoreStudents"
       size="small"
@@ -42,4 +57,13 @@ const hasMoreStudents = computed(() =>
 const remainingCount = computed(() => 
   props.students.length - props.maxDisplay
 )
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  try {
+    return new Date(dateString).toLocaleDateString()
+  } catch {
+    return dateString
+  }
+}
 </script>

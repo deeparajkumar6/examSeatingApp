@@ -1,9 +1,21 @@
 <template>
   <v-card-text>
+    <!-- Search Field -->
+    <v-text-field
+      v-model="search"
+      label="Search exam rooms..."
+      prepend-inner-icon="mdi-magnify"
+      variant="outlined"
+      density="compact"
+      clearable
+      class="mb-4"
+    />
+    
     <v-data-table 
       :headers="headers" 
       :items="examRooms"
       :loading="loading"
+      :search="search"
       item-key="id"
     >
       <template #item.roomInfo="{ item }">
@@ -35,6 +47,7 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import ExamRoomActions from './ExamRoomActions.vue'
 
 defineProps({
@@ -49,6 +62,9 @@ defineProps({
 })
 
 defineEmits(['edit-room', 'delete-room'])
+
+// Search functionality
+const search = ref('')
 
 const headers = [
   { title: 'Room Info', key: 'roomInfo', sortable: true },

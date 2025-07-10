@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import init_database
-from .routes import classes, students, exam_rooms, schedule, csv_routes
+from .routes import classes, students, exam_rooms, schedule, csv_routes, bulk_import
 from .config import settings
 
 def create_app() -> FastAPI:
@@ -30,6 +30,7 @@ def create_app() -> FastAPI:
     app.include_router(exam_rooms.router)
     app.include_router(schedule.router)
     app.include_router(csv_routes.router)
+    app.include_router(bulk_import.router)
 
     @app.get("/")
     def root():

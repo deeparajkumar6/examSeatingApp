@@ -12,8 +12,9 @@
               <v-text-field
                 v-model="formData.roomNumber"
                 label="Room Number"
+                variant="outlined"
                 :rules="[rules.required]"
-                prepend-icon="mdi-door"
+                prepend-inner-icon="mdi-door"
                 required
               />
             </v-col>
@@ -22,9 +23,10 @@
               <v-text-field
                 v-model.number="formData.roomCapacity"
                 label="Room Capacity"
+                variant="outlined"
                 type="number"
                 :rules="[rules.required, rules.positiveNumber]"
-                prepend-icon="mdi-account-group"
+                prepend-inner-icon="mdi-account-group"
                 required
               />
             </v-col>
@@ -35,8 +37,9 @@
               <v-text-field
                 v-model="formData.roomFloor"
                 label="Floor"
+                variant="outlined"
                 :rules="[rules.required]"
-                prepend-icon="mdi-stairs"
+                prepend-inner-icon="mdi-stairs"
                 required
               />
             </v-col>
@@ -45,8 +48,9 @@
               <v-text-field
                 v-model="formData.roomBuilding"
                 label="Building"
+                variant="outlined"
                 :rules="[rules.required]"
-                prepend-icon="mdi-office-building"
+                prepend-inner-icon="mdi-office-building"
                 required
               />
             </v-col>

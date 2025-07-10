@@ -19,7 +19,8 @@
           <v-text-field
             v-model="formData.title"
             label="Examination Title"
-            prepend-icon="mdi-format-title"
+            variant="outlined"
+            prepend-inner-icon="mdi-format-title"
             :rules="[rules.required]"
             required
           />

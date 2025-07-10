@@ -5,8 +5,9 @@ from .database import get_db_cursor
 from .config import settings
 from .models import (
     ClassModel, ClassResponseModel, StudentModel, StudentResponseModel,
-    ExamRoomModel, ExamRoomResponseModel, ScheduleRequest
+    ExamRoomModel, ExamRoomResponseModel, ScheduleRequest, BulkImportResponse
 )
+from .excel_utils import ExcelParser, ExcelValidator
 
 class ClassService:
     @staticmethod
@@ -17,25 +18,40 @@ class ClassService:
             result = []
             
             for class_row in classes:
-                class_id, class_name = class_row
+                # Handle both old and new schema
+                if len(class_row) == 2:
+                    class_id, class_name = class_row
+                    shift = None
+                else:
+                    class_id, class_name, shift = class_row
                 
                 # Get students for this class
-                cursor.execute("SELECT id, rollNumber, studentName, classId FROM students WHERE classId = ?", (class_id,))
+                cursor.execute("SELECT id, rollNumber, studentName, classId, language, dateOfBirth FROM students WHERE classId = ?", (class_id,))
                 students = cursor.fetchall()
                 
-                student_list = [
-                    StudentResponseModel(
-                        id=student[0],
-                        rollNumber=student[1],
-                        studentName=student[2],
-                        classId=student[3]
-                    )
-                    for student in students
-                ]
+                student_list = []
+                for student in students:
+                    # Handle both old and new schema
+                    if len(student) == 4:
+                        student_id, roll_num, name, class_id = student
+                        language = None
+                        date_of_birth = None
+                    else:
+                        student_id, roll_num, name, class_id, language, date_of_birth = student
+                    
+                    student_list.append(StudentResponseModel(
+                        id=student_id,
+                        rollNumber=roll_num,
+                        studentName=name,
+                        classId=class_id,
+                        language=language,
+                        dateOfBirth=date_of_birth
+                    ))
                 
                 result.append(ClassResponseModel(
                     id=class_id,
                     className=class_name,
+                    shift=shift,
                     students=student_list
                 ))
             
@@ -45,15 +61,23 @@ class ClassService:
     def create_class(class_data: ClassModel) -> None:
         with get_db_cursor() as cursor:
             # Insert class
-            cursor.execute("INSERT INTO classes (className) VALUES (?)", (class_data.className,))
+            cursor.execute("INSERT INTO classes (className, shift) VALUES (?, ?)", 
+                         (class_data.className, class_data.shift))
             class_id = cursor.lastrowid
             
             # Insert students
-            for student in class_data.students:
+            for index, student in enumerate(class_data.students):
+                # Generate rollNumber if not provided
+                roll_number = student.rollNumber
+                if not roll_number:
+                    # Generate a simple roll number based on class_id and student index
+                    roll_number = f"STU{class_id:03d}{index+1:03d}"
+                
                 cursor.execute("""
-                    INSERT INTO students (rollNumber, studentName, classId)
-                    VALUES (?, ?, ?)
-                """, (student.rollNumber, student.studentName, class_id))
+                    INSERT INTO students (rollNumber, studentName, language, dateOfBirth, classId)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (roll_number, student.studentName, student.language, 
+                     student.dateOfBirth, class_id))
 
     @staticmethod
     def update_class(class_id: int, class_data: ClassModel) -> None:
@@ -62,18 +86,26 @@ class ClassService:
             if cursor.fetchone() is None:
                 raise HTTPException(status_code=404, detail="Class not found")
             
-            # Update class name
-            cursor.execute("UPDATE classes SET className=? WHERE id=?", (class_data.className, class_id))
+            # Update class name and shift
+            cursor.execute("UPDATE classes SET className=?, shift=? WHERE id=?", 
+                         (class_data.className, class_data.shift, class_id))
             
             # Delete existing students for this class
             cursor.execute("DELETE FROM students WHERE classId=?", (class_id,))
             
             # Insert new students
-            for student in class_data.students:
+            for index, student in enumerate(class_data.students):
+                # Generate rollNumber if not provided
+                roll_number = student.rollNumber
+                if not roll_number:
+                    # Generate a simple roll number based on class_id and student index
+                    roll_number = f"STU{class_id:03d}{index+1:03d}"
+                
                 cursor.execute("""
-                    INSERT INTO students (rollNumber, studentName, classId)
-                    VALUES (?, ?, ?)
-                """, (student.rollNumber, student.studentName, class_id))
+                    INSERT INTO students (rollNumber, studentName, language, dateOfBirth, classId)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (roll_number, student.studentName, student.language, 
+                     student.dateOfBirth, class_id))
 
     @staticmethod
     def delete_class(class_id: int) -> None:
@@ -86,21 +118,119 @@ class ClassService:
             cursor.execute("DELETE FROM students WHERE classId=?", (class_id,))
             cursor.execute("DELETE FROM classes WHERE id=?", (class_id,))
 
+    @staticmethod
+    def bulk_import_from_excel(file_content: bytes) -> BulkImportResponse:
+        """Bulk import classes and students from Excel file"""
+        try:
+            # Parse Excel file
+            parsed_data = ExcelParser.parse_student_excel(file_content)
+            
+            # Validate parsed data
+            validation_errors = ExcelValidator.validate_parsed_data(parsed_data)
+            if validation_errors:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Validation errors: {'; '.join(validation_errors)}"
+                )
+            
+            classes_created = 0
+            students_created = 0
+            details = []
+            
+            with get_db_cursor() as cursor:
+                for class_data in parsed_data['classes']:
+                    class_name = class_data['class_name']
+                    shift = class_data['shift']
+                    students = class_data['students']
+                    
+                    # Check if class already exists
+                    cursor.execute(
+                        "SELECT id FROM classes WHERE className = ? AND shift = ?", 
+                        (class_name, shift)
+                    )
+                    existing_class = cursor.fetchone()
+                    
+                    if existing_class:
+                        class_id = existing_class[0]
+                        # Update existing class - delete old students and add new ones
+                        cursor.execute("DELETE FROM students WHERE classId = ?", (class_id,))
+                        action = "updated"
+                    else:
+                        # Create new class
+                        cursor.execute(
+                            "INSERT INTO classes (className, shift) VALUES (?, ?)",
+                            (class_name, shift)
+                        )
+                        class_id = cursor.lastrowid
+                        classes_created += 1
+                        action = "created"
+                    
+                    # Add students to the class
+                    class_students_added = 0
+                    for student in students:
+                        try:
+                            cursor.execute("""
+                                INSERT INTO students (rollNumber, studentName, language, dateOfBirth, classId)
+                                VALUES (?, ?, ?, ?, ?)
+                            """, (
+                                student['register_number'],
+                                student['name'],
+                                student['language'],
+                                student['date_of_birth'],
+                                class_id
+                            ))
+                            class_students_added += 1
+                            students_created += 1
+                        except sqlite3.IntegrityError as e:
+                            # Handle duplicate register numbers
+                            print(f"Skipping duplicate student {student['register_number']}: {e}")
+                    
+                    details.append({
+                        "className": class_name,
+                        "shift": shift,
+                        "action": action,
+                        "studentsAdded": class_students_added
+                    })
+            
+            return BulkImportResponse(
+                message=f"Successfully imported {classes_created} classes with {students_created} students",
+                classesCreated=classes_created,
+                studentsCreated=students_created,
+                details=details
+            )
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error during bulk import: {str(e)}")
+
 class StudentService:
     @staticmethod
     def get_students_by_class(class_id: int) -> List[StudentResponseModel]:
         with get_db_cursor() as cursor:
-            cursor.execute("SELECT id, rollNumber, studentName, classId FROM students WHERE classId = ?", (class_id,))
+            cursor.execute("SELECT id, rollNumber, studentName, classId, language, dateOfBirth FROM students WHERE classId = ?", (class_id,))
             students = cursor.fetchall()
-            return [
-                StudentResponseModel(
-                    id=student[0],
-                    rollNumber=student[1],
-                    studentName=student[2],
-                    classId=student[3]
-                )
-                for student in students
-            ]
+            
+            student_list = []
+            for student in students:
+                # Handle both old and new schema
+                if len(student) == 4:
+                    student_id, roll_num, name, class_id = student
+                    language = None
+                    date_of_birth = None
+                else:
+                    student_id, roll_num, name, class_id, language, date_of_birth = student
+                
+                student_list.append(StudentResponseModel(
+                    id=student_id,
+                    rollNumber=roll_num,
+                    studentName=name,
+                    classId=class_id,
+                    language=language,
+                    dateOfBirth=date_of_birth
+                ))
+            
+            return student_list
 
     @staticmethod
     def create_student(class_id: int, student_data: StudentModel) -> None:
@@ -109,11 +239,20 @@ class StudentService:
             if cursor.fetchone() is None:
                 raise HTTPException(status_code=404, detail="Class not found")
             
+            # Generate rollNumber if not provided
+            roll_number = student_data.rollNumber
+            if not roll_number:
+                # Get the count of existing students in this class to generate unique roll number
+                cursor.execute("SELECT COUNT(*) FROM students WHERE classId=?", (class_id,))
+                student_count = cursor.fetchone()[0]
+                roll_number = f"STU{class_id:03d}{student_count+1:03d}"
+            
             try:
                 cursor.execute("""
-                    INSERT INTO students (rollNumber, studentName, classId)
-                    VALUES (?, ?, ?)
-                """, (student_data.rollNumber, student_data.studentName, class_id))
+                    INSERT INTO students (rollNumber, studentName, language, dateOfBirth, classId)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (roll_number, student_data.studentName, 
+                     student_data.language, student_data.dateOfBirth, class_id))
             except sqlite3.IntegrityError:
                 raise HTTPException(status_code=400, detail="Student with this roll number already exists in this class")
 

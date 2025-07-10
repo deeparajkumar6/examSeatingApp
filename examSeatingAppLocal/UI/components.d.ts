@@ -24,6 +24,7 @@ declare module 'vue' {
     ExamRoomManagement: typeof import('./src/components/examRooms/ExamRoomManagement.vue')['default']
     ExamRoomStats: typeof import('./src/components/examRooms/ExamRoomStats.vue')['default']
     ExamRoomTable: typeof import('./src/components/examRooms/ExamRoomTable.vue')['default']
+    ExcelImportDialog: typeof import('./src/components/classes/ExcelImportDialog.vue')['default']
     NavigationDrawer: typeof import('./src/components/layout/NavigationDrawer.vue')['default']
     NavigationItem: typeof import('./src/components/layout/NavigationItem.vue')['default']
     RoomAssignmentCard: typeof import('./src/components/schedule/results/RoomAssignmentCard.vue')['default']
