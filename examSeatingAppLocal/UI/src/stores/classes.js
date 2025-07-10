@@ -18,9 +18,12 @@ export const useClassesStore = defineStore('classes', () => {
   const fetchClasses = async () => {
     try {
       loading.value = true
-      classes.value = await classesApi.getAll()
+      const response = await classesApi.getAll()
+      // Handle both array and object responses
+      classes.value = Array.isArray(response) ? response : (response.classes || [])
     } catch (error) {
       console.error('Failed to fetch classes:', error)
+      classes.value = []
     } finally {
       loading.value = false
     }

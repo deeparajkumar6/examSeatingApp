@@ -60,19 +60,24 @@ const props = defineProps({
   }
 })
 
-const roomCount = computed(() => props.examRooms.length)
+const roomCount = computed(() => {
+  if (!props.examRooms || !Array.isArray(props.examRooms)) return 0
+  return props.examRooms.length
+})
 
-const totalCapacity = computed(() => 
-  props.examRooms.reduce((total, room) => total + room.roomCapacity, 0)
-)
+const totalCapacity = computed(() => {
+  if (!props.examRooms || !Array.isArray(props.examRooms)) return 0
+  return props.examRooms.reduce((total, room) => total + (room.roomCapacity || 0), 0)
+})
 
 const averageCapacity = computed(() => {
-  if (props.examRooms.length === 0) return 0
+  if (!props.examRooms || !Array.isArray(props.examRooms) || props.examRooms.length === 0) return 0
   return Math.round(totalCapacity.value / props.examRooms.length)
 })
 
 const buildingCount = computed(() => {
-  const buildings = new Set(props.examRooms.map(room => room.roomBuilding))
+  if (!props.examRooms || !Array.isArray(props.examRooms)) return 0
+  const buildings = new Set(props.examRooms.map(room => room.roomBuilding).filter(Boolean))
   return buildings.size
 })
 </script>

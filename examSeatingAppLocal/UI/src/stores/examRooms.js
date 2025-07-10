@@ -18,9 +18,12 @@ export const useExamRoomsStore = defineStore('examRooms', () => {
   const fetchExamRooms = async () => {
     try {
       loading.value = true
-      examRooms.value = await examRoomsApi.getAll()
+      const response = await examRoomsApi.getAll()
+      // Handle both array and object responses
+      examRooms.value = Array.isArray(response) ? response : (response.examRooms || [])
     } catch (error) {
       console.error('Failed to fetch exam rooms:', error)
+      examRooms.value = []
     } finally {
       loading.value = false
     }

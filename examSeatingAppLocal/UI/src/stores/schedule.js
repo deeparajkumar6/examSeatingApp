@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { scheduleApi } from '@/services/scheduleApi'
 import { useAppStore } from './app'
+import PDFService from '@/services/pdfService'
 
 export const useScheduleStore = defineStore('schedule', () => {
   // State
@@ -46,110 +47,37 @@ export const useScheduleStore = defineStore('schedule', () => {
     currentSchedule.value = null
   }
 
-  const exportToPdf = () => {
+  const exportSummaryPDF = async () => {
     if (!currentSchedule.value) return
     
     try {
-      // Create PDF export functionality
-      const printWindow = window.open('', '_blank')
-      const scheduleHtml = generateScheduleHtml(currentSchedule.value)
-      
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Exam Schedule - ${currentSchedule.value.title}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .room-section { margin-bottom: 30px; page-break-inside: avoid; }
-            .room-header { background: #f5f5f5; padding: 10px; font-weight: bold; }
-            .student-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            .student-table th, .student-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            .student-table th { background: #f9f9f9; }
-            @media print { .no-print { display: none; } }
-          </style>
-        </head>
-        <body>
-          ${scheduleHtml}
-          <div class="no-print" style="margin-top: 20px;">
-            <button onclick="window.print()">Print</button>
-            <button onclick="window.close()">Close</button>
-          </div>
-        </body>
-        </html>
-      `)
-      
-      printWindow.document.close()
-      
+      await PDFService.generateSummaryPDF(currentSchedule.value)
       const appStore = useAppStore()
-      appStore.showSuccess('Schedule opened in new window for printing/PDF export')
+      appStore.showSuccess('Summary PDF generated successfully')
     } catch (error) {
-      console.error('Failed to export PDF:', error)
+      console.error('Failed to generate summary PDF:', error)
       const appStore = useAppStore()
-      appStore.showError('Failed to export schedule')
+      appStore.showError('Failed to generate summary PDF')
     }
   }
 
-  const generateScheduleHtml = (schedule) => {
-    if (!schedule?.room_assignments) return '<p>No schedule data available</p>'
+  const exportDetailedPDF = async () => {
+    if (!currentSchedule.value) return
     
-    let html = `
-      <div class="header">
-        <h1>${schedule.title || 'Exam Schedule'}</h1>
-        <p><strong>Date:</strong> ${schedule.date || 'N/A'} | <strong>Session:</strong> ${schedule.session || 'N/A'}</p>
-        <p><strong>Total Students:</strong> ${totalStudentsScheduled.value}</p>
-      </div>
-    `
-    
-    schedule.room_assignments.forEach(room => {
-      if (!room) return
-      
-      html += `
-        <div class="room-section">
-          <div class="room-header">
-            ${room.room_number || 'Unknown Room'} - ${room.room_building || 'Unknown Building'} (${room.room_floor || 'Unknown Floor'})
-            <span style="float: right;">Capacity: ${room.room_capacity || 0} | Assigned: ${room.students?.length || 0}</span>
-          </div>
-          <table class="student-table">
-            <thead>
-              <tr>
-                <th>Roll Number</th>
-                <th>Student Name</th>
-                <th>Class</th>
-              </tr>
-            </thead>
-            <tbody>
-      `
-      
-      if (room.students && room.students.length > 0) {
-        room.students.forEach(student => {
-          if (student) {
-            html += `
-              <tr>
-                <td>${student.rollNumber || 'N/A'}</td>
-                <td>${student.studentName || 'N/A'}</td>
-                <td>${student.className || 'N/A'}</td>
-              </tr>
-            `
-          }
-        })
-      } else {
-        html += `
-          <tr>
-            <td colspan="3" style="text-align: center; font-style: italic;">No students assigned</td>
-          </tr>
-        `
-      }
-      
-      html += `
-            </tbody>
-          </table>
-        </div>
-      `
-    })
-    
-    return html
+    try {
+      await PDFService.generateDetailedPDF(currentSchedule.value)
+      const appStore = useAppStore()
+      appStore.showSuccess('Detailed PDF generated successfully')
+    } catch (error) {
+      console.error('Failed to generate detailed PDF:', error)
+      const appStore = useAppStore()
+      appStore.showError('Failed to generate detailed PDF')
+    }
+  }
+
+  // Legacy method for backward compatibility
+  const exportToPdf = async () => {
+    await exportSummaryPDF()
   }
 
   return {
@@ -165,6 +93,8 @@ export const useScheduleStore = defineStore('schedule', () => {
     // Actions
     createSchedule,
     clearSchedule,
-    exportToPdf
+    exportSummaryPDF,
+    exportDetailedPDF,
+    exportToPdf // Legacy method
   }
 })

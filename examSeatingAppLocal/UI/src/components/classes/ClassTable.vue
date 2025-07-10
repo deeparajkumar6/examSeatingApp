@@ -7,11 +7,11 @@
       item-key="id"
     >
       <template #item.studentCount="{ item }">
-        {{ item.students.length }}
+        {{ item.students?.length || 0 }}
       </template>
       
       <template #item.rollNumbers="{ item }">
-        <StudentChips :students="item.students" />
+        <StudentChips :students="item.students || []" />
       </template>
       
       <template #item.actions="{ item }">

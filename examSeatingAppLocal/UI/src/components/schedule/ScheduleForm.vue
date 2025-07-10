@@ -29,7 +29,14 @@
       <!-- Class Selection -->
       <v-row>
         <v-col cols="12">
+          <div v-if="!classes || classes.length === 0">
+            <v-alert type="info" variant="tonal">
+              <v-icon left>mdi-information</v-icon>
+              No classes available. Please add classes first.
+            </v-alert>
+          </div>
           <ClassSelector 
+            v-else
             v-model="formData.classes"
             :classes="classes"
           />
@@ -39,7 +46,14 @@
       <!-- Room Selection -->
       <v-row>
         <v-col cols="12">
+          <div v-if="!examRooms || examRooms.length === 0">
+            <v-alert type="info" variant="tonal">
+              <v-icon left>mdi-information</v-icon>
+              No exam rooms available. Please add exam rooms first.
+            </v-alert>
+          </div>
           <RoomSelector 
+            v-else
             v-model="formData.exam_rooms"
             :exam-rooms="examRooms"
           />
@@ -73,7 +87,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, toRefs } from 'vue'
 import DatePicker from './form/DatePicker.vue'
 import SessionSelector from './form/SessionSelector.vue'
 import ClassSelector from './form/ClassSelector.vue'
@@ -101,6 +115,9 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'submit'])
 
+// Destructure props for template access
+const { classes, examRooms, loading } = toRefs(props)
+
 const form = ref(null)
 const valid = ref(false)
 
@@ -118,7 +135,9 @@ const canSubmit = computed(() => {
          formData.value.title &&
          formData.value.session &&
          formData.value.classes.length > 0 &&
-         formData.value.exam_rooms.length > 0
+         formData.value.exam_rooms.length > 0 &&
+         classes.value && classes.value.length > 0 &&
+         examRooms.value && examRooms.value.length > 0
 })
 
 const handleSubmit = async () => {

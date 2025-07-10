@@ -16,7 +16,8 @@
     <ScheduleResults 
       v-if="generatedSchedule && generatedSchedule.room_assignments"
       :schedule="generatedSchedule"
-      @export-pdf="handleExportPdf"
+      @export-summary-pdf="handleExportSummaryPdf"
+      @export-detailed-pdf="handleExportDetailedPdf"
       @clear="handleClearSchedule"
     />
   </v-container>
@@ -61,8 +62,12 @@ const handleCreateSchedule = async (formData) => {
   }
 }
 
-const handleExportPdf = () => {
-  scheduleStore.exportToPdf()
+const handleExportSummaryPdf = async () => {
+  await scheduleStore.exportSummaryPDF()
+}
+
+const handleExportDetailedPdf = async () => {
+  await scheduleStore.exportDetailedPDF()
 }
 
 const handleClearSchedule = () => {

@@ -15,7 +15,7 @@
       <v-list-item v-bind="props">
         <v-list-item-title>{{ item.raw.className }}</v-list-item-title>
         <v-list-item-subtitle>
-          {{ item.raw.students.length }} students
+          {{ item.raw.students?.length || 0 }} students
         </v-list-item-subtitle>
       </v-list-item>
     </template>
@@ -49,24 +49,27 @@ const props = defineProps({
 
 defineEmits(['update:modelValue'])
 
-const classOptions = computed(() => 
-  props.classes.map(cls => ({
+const classOptions = computed(() => {
+  if (!props.classes || !Array.isArray(props.classes)) return []
+  return props.classes.map(cls => ({
     ...cls,
-    classDisplayName: `${cls.className} (${cls.students.length} students)`
+    classDisplayName: `${cls.className} (${cls.students?.length || 0} students)`
   }))
-)
+})
 
 const rules = {
   required: (value) => value.length > 0 || 'At least one class must be selected'
 }
 
 const getClassName = (classId) => {
+  if (!props.classes || !Array.isArray(props.classes)) return ''
   const cls = props.classes.find(c => c.id === classId)
   return cls ? cls.className : ''
 }
 
 const getStudentCount = (classId) => {
+  if (!props.classes || !Array.isArray(props.classes)) return 0
   const cls = props.classes.find(c => c.id === classId)
-  return cls ? cls.students.length : 0
+  return cls ? (cls.students?.length || 0) : 0
 }
 </script>

@@ -57,14 +57,16 @@ const props = defineProps({
 
 defineEmits(['update:modelValue'])
 
-const roomOptions = computed(() => 
-  props.examRooms.map(room => ({
+const roomOptions = computed(() => {
+  if (!props.examRooms || !Array.isArray(props.examRooms)) return []
+  return props.examRooms.map(room => ({
     ...room,
     roomDisplayName: `${room.roomNumber} - ${room.roomBuilding} (${room.roomCapacity} seats)`
   }))
-)
+})
 
 const totalCapacity = computed(() => {
+  if (!props.examRooms || !Array.isArray(props.examRooms)) return 0
   return props.modelValue.reduce((total, roomId) => {
     const room = props.examRooms.find(r => r.id === roomId)
     return total + (room ? room.roomCapacity : 0)
@@ -76,11 +78,13 @@ const rules = {
 }
 
 const getRoomNumber = (roomId) => {
+  if (!props.examRooms || !Array.isArray(props.examRooms)) return ''
   const room = props.examRooms.find(r => r.id === roomId)
   return room ? room.roomNumber : ''
 }
 
 const getRoomCapacity = (roomId) => {
+  if (!props.examRooms || !Array.isArray(props.examRooms)) return 0
   const room = props.examRooms.find(r => r.id === roomId)
   return room ? room.roomCapacity : 0
 }

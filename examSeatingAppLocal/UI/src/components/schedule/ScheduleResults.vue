@@ -2,7 +2,8 @@
   <v-card>
     <ScheduleResultsHeader 
       :schedule="schedule"
-      @export-pdf="$emit('export-pdf')"
+      @export-summary-pdf="$emit('export-summary-pdf')"
+      @export-detailed-pdf="$emit('export-detailed-pdf')"
       @clear="$emit('clear')"
     />
     
@@ -45,5 +46,5 @@ defineProps({
   }
 })
 
-defineEmits(['export-pdf', 'clear'])
+defineEmits(['export-summary-pdf', 'export-detailed-pdf', 'clear'])
 </script>
