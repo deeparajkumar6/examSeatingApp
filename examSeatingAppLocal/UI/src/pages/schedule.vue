@@ -1,9 +1,7 @@
 <template>
-  <v-container>
-    <RoomSchedule />
-  </v-container>
+  <ScheduleManagement />
 </template>
 
 <script setup>
-//
+import ScheduleManagement from '@/components/schedule/ScheduleManagement.vue'
 </script>

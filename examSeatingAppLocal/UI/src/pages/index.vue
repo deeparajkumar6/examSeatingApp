@@ -1,9 +1,7 @@
 <template>
-  <v-container>
-    <ClassCrud />
-  </v-container>
+  <ClassManagement />
 </template>
 
 <script setup>
-//
+import ClassManagement from '@/components/classes/ClassManagement.vue'
 </script>

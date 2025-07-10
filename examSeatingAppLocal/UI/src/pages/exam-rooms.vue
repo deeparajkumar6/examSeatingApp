@@ -1,9 +1,7 @@
 <template>
-  <v-container>
-    <ExamRoomCrud />
-  </v-container>
+  <ExamRoomManagement />
 </template>
 
 <script setup>
-//
+import ExamRoomManagement from '@/components/examRooms/ExamRoomManagement.vue'
 </script>

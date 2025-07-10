@@ -1,100 +1,121 @@
-# Exam Seating App API
+# Exam Seating App - Clean Modular FastAPI Application
 
-## Setup Instructions
+## 🎯 Clean Project Structure
 
-1. Install dependencies:
+```
+fastapi_app/
+├── app/                     # Main application package
+│   ├── __init__.py         # Package initialization
+│   ├── main.py             # Application factory and setup
+│   ├── config.py           # Configuration settings
+│   ├── database.py         # Database connection and management
+│   ├── models.py           # Pydantic data models
+│   ├── services.py         # Business logic services
+│   ├── csv_utils.py        # CSV processing utilities
+│   └── routes/             # API endpoint routes
+│       ├── __init__.py
+│       ├── classes.py      # Class management endpoints
+│       ├── students.py     # Student management endpoints
+│       ├── exam_rooms.py   # Exam room management endpoints
+│       ├── schedule.py     # Scheduling endpoints
+│       └── csv_routes.py   # CSV upload/download endpoints
+├── main.py                 # Application entry point
+├── requirements.txt        # Dependencies
+├── database.db            # SQLite database
+└── README.md              # This documentation
+```
+
+## 🚀 Quick Start
+
+### 1. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Activate virtual environment (if using):
+### 2. Run the Application
 ```bash
-# Windows
-.\.venv\Scripts\activate
-
-# Linux/Mac
-source .venv/bin/activate
+python main.py
 ```
 
-3. Run database migration (if upgrading from old version):
-```bash
-python migrate_database.py
-```
+### 3. Access the API
+- **API Documentation**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
+- **Base URL**: http://localhost:8000
 
-4. Start the API server:
-```bash
-fastapi dev main.py
-```
+## 📋 API Endpoints
 
-The API will be available at `http://localhost:8000`
-
-## New Features
-
-### CSV Upload Functionality
-- **Bulk Import**: Upload students from CSV files
-- **Template Download**: Get a properly formatted CSV template
-- **Error Handling**: Detailed feedback on upload results
-- **Class Management**: Automatically creates new classes or updates existing ones
-
-### CSV Format Requirements
-The CSV file must contain these columns:
-- `className` - Name of the class
-- `rollNumber` - Student's roll number (can be non-sequential)
-- `studentName` - Student's name (optional, can be empty)
-
-Example CSV:
-```csv
-className,rollNumber,studentName
-Computer Science A,CS101,Alice Johnson
-Computer Science A,CS103,Bob Smith
-Mathematics B,MATH201,Eve Wilson
-Mathematics B,MATH203,Frank Miller
-```
-
-## Changes in New Version
-
-- **Explicit Student Management**: Instead of roll number ranges, you can now add individual students with specific roll numbers
-- **Missing Roll Numbers**: Supports scenarios where some roll numbers might be missing from a sequence
-- **Student Names**: Optional student names can be added alongside roll numbers
-- **Bulk Import**: UI supports bulk adding of students via text input
-- **CSV Upload**: Upload students from CSV files with automatic class creation
-- **Better Scheduling**: Improved seating arrangement algorithm that works with explicit student lists
-
-## API Endpoints
-
-### Class Management
-- `GET /class` - Get all classes with their students
+### Classes Management
+- `GET /class` - Get all classes with students
 - `POST /class` - Create a new class with students
-- `PUT /class/{id}` - Update a class and its students
-- `DELETE /class/{id}` - Delete a class and all its students
+- `PUT /class/{class_id}` - Update an existing class
+- `DELETE /class/{class_id}` - Delete a class and all its students
 
 ### Student Management
-- `GET /student/{class_id}` - Get students for a specific class
-- `POST /student/{class_id}` - Add a student to a class
-- `DELETE /student/{id}` - Delete a student
-
-### CSV Upload
-- `POST /upload-csv` - Upload students from CSV file
-- `GET /download-csv-template` - Download CSV template for students
-- `POST /upload-exam-rooms-csv` - Upload exam rooms from CSV file
-- `GET /download-exam-rooms-csv-template` - Download CSV template for exam rooms
+- `GET /student/{class_id}` - Get all students in a specific class
+- `POST /student/{class_id}` - Add a new student to a class
+- `DELETE /student/{student_id}` - Delete a student
 
 ### Exam Room Management
 - `GET /examRoom` - Get all exam rooms
 - `POST /examRoom` - Create a new exam room
-- `PUT /examRoom/{id}` - Update an exam room
-- `DELETE /examRoom/{id}` - Delete an exam room
+- `PUT /examRoom/{room_id}` - Update an existing exam room
+- `DELETE /examRoom/{room_id}` - Delete an exam room
 
-### Scheduling
-- `POST /schedule` - Generate seating arrangement
+### Exam Scheduling
+- `POST /schedule` - Create exam seating arrangement
 
-## Testing
+### CSV Operations
+- `POST /upload-csv` - Upload student data via CSV
+- `GET /download-csv-template` - Download student CSV template
+- `POST /upload-exam-rooms-csv` - Upload exam rooms via CSV
+- `GET /download-exam-rooms-csv-template` - Download exam rooms CSV template
 
-Run the test scripts to verify functionality:
-```bash
-# Test basic API functionality
-python test_api.py
+## ⚙️ Configuration
 
-# Test CSV upload functionality
-python test_csv_upload.py
-```
+Edit `app/config.py` to modify:
+- Database file path
+- CORS settings
+- Maximum students per class per room
+- API metadata
+
+## 🗄️ Database
+
+The application uses SQLite with the following tables:
+- **classes**: Store class information
+- **students**: Store student data linked to classes
+- **examRooms**: Store exam room details
+
+## 🎯 Key Features
+
+- **Modular Architecture**: Clean separation of concerns
+- **Type Safety**: Full type hints throughout
+- **Error Handling**: Comprehensive error management
+- **CSV Support**: Bulk upload/download functionality
+- **Flexible Scheduling**: Smart student distribution across rooms
+- **CORS Enabled**: Ready for frontend integration
+
+## 🔧 Development
+
+### Adding New Features
+1. **New API endpoints**: Add routes in `app/routes/`
+2. **Business logic**: Extend services in `app/services.py`
+3. **Data models**: Add models in `app/models.py`
+4. **Database changes**: Update `app/database.py`
+
+### Testing
+The application includes comprehensive error handling and validation. Test all endpoints using the interactive documentation at `/docs`.
+
+## 📦 Dependencies
+
+- **FastAPI**: Modern web framework
+- **Uvicorn**: ASGI server
+- **Pydantic**: Data validation
+- **Python-multipart**: File upload support
+
+## 🎉 Benefits
+
+- **Clean Code**: Well-organized and maintainable
+- **Scalable**: Easy to extend and modify
+- **Professional**: Follows industry best practices
+- **Documented**: Comprehensive API documentation
+- **Tested**: Verified functionality
