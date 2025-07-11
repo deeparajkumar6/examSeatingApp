@@ -59,10 +59,14 @@ class ClassService:
 
     @staticmethod
     def create_class(class_data: ClassModel) -> None:
+        # Validate that shift is provided and not empty
+        if not class_data.shift or not class_data.shift.strip():
+            raise HTTPException(status_code=400, detail="Shift is required and cannot be empty")
+            
         with get_db_cursor() as cursor:
             # Insert class
             cursor.execute("INSERT INTO classes (className, shift) VALUES (?, ?)", 
-                         (class_data.className, class_data.shift))
+                         (class_data.className, class_data.shift.strip()))
             class_id = cursor.lastrowid
             
             # Insert students
@@ -81,6 +85,10 @@ class ClassService:
 
     @staticmethod
     def update_class(class_id: int, class_data: ClassModel) -> None:
+        # Validate that shift is provided and not empty
+        if not class_data.shift or not class_data.shift.strip():
+            raise HTTPException(status_code=400, detail="Shift is required and cannot be empty")
+            
         with get_db_cursor() as cursor:
             cursor.execute("SELECT * FROM classes WHERE id=?", (class_id,))
             if cursor.fetchone() is None:
@@ -88,7 +96,7 @@ class ClassService:
             
             # Update class name and shift
             cursor.execute("UPDATE classes SET className=?, shift=? WHERE id=?", 
-                         (class_data.className, class_data.shift, class_id))
+                         (class_data.className, class_data.shift.strip(), class_id))
             
             # Delete existing students for this class
             cursor.execute("DELETE FROM students WHERE classId=?", (class_id,))
@@ -143,10 +151,14 @@ class ClassService:
                     shift = class_data['shift']
                     students = class_data['students']
                     
+                    # Validate shift is not empty
+                    if not shift or not shift.strip():
+                        raise HTTPException(status_code=400, detail=f"Shift is required for class {class_name}")
+                    
                     # Check if class already exists
                     cursor.execute(
                         "SELECT id FROM classes WHERE className = ? AND shift = ?", 
-                        (class_name, shift)
+                        (class_name, shift.strip())
                     )
                     existing_class = cursor.fetchone()
                     
@@ -159,7 +171,7 @@ class ClassService:
                         # Create new class
                         cursor.execute(
                             "INSERT INTO classes (className, shift) VALUES (?, ?)",
-                            (class_name, shift)
+                            (class_name, shift.strip())
                         )
                         class_id = cursor.lastrowid
                         classes_created += 1
@@ -187,7 +199,7 @@ class ClassService:
                     
                     details.append({
                         "className": class_name,
-                        "shift": shift,
+                        "shift": shift.strip(),
                         "action": action,
                         "studentsAdded": class_students_added
                     })
@@ -318,19 +330,33 @@ class ScheduleService:
         max_students_per_class = settings.MAX_STUDENTS_PER_CLASS_PER_ROOM
         
         with get_db_cursor() as cursor:
+            # Fetch class information including shift
+            class_info = {}
+            for class_id in data.classes:
+                cursor.execute("SELECT className, shift FROM classes WHERE id = ?", (class_id,))
+                class_result = cursor.fetchone()
+                if class_result:
+                    class_name, shift = class_result
+                    # Create display name with shift for PDF
+                    display_name = f"{class_name} - {shift}" if shift else class_name
+                    class_info[class_id] = {
+                        'name': class_name,
+                        'shift': shift,
+                        'display_name': display_name
+                    }
+            
             # Fetch students for selected classes
             students_by_class = {}
             all_students = []
             
             for class_id in data.classes:
-                cursor.execute("SELECT className FROM classes WHERE id = ?", (class_id,))
-                class_result = cursor.fetchone()
-                if class_result:
+                if class_id in class_info:
                     cursor.execute("SELECT rollNumber FROM students WHERE classId = ? ORDER BY rollNumber", (class_id,))
                     student_results = cursor.fetchall()
                     class_students = [row[0] for row in student_results]
                     students_by_class[class_id] = class_students
-                    all_students.extend([(student, class_id) for student in class_students])
+                    # Include class display name with shift in student data
+                    all_students.extend([(student, class_id, class_info[class_id]['display_name']) for student in class_students])
 
             # Sort all students by roll number
             all_students.sort(key=lambda x: x[0])
@@ -345,7 +371,8 @@ class ScheduleService:
                         "roomNumber": result[0],
                         "capacity": result[1],
                         "students": [],
-                        "class_counts": {}
+                        "class_counts": {},
+                        "class_info": {}  # Store class information for each room
                     })
 
             # Calculate total capacity
@@ -353,15 +380,137 @@ class ScheduleService:
             if total_capacity < len(all_students):
                 raise HTTPException(status_code=400, detail="Not enough capacity in selected rooms for all students")
 
-            # Place students in rooms
-            ScheduleService._place_students_in_rooms(all_students, rooms, data.split, max_students_per_class)
+            # Place students in rooms with class information
+            ScheduleService._place_students_in_rooms_with_class_info(all_students, rooms, data.split, max_students_per_class)
 
-            # Build response
+            # Build response with class information
             seating_arrangement = {}
+            class_summary = {}
+            
             for room in rooms:
-                seating_arrangement[room["roomNumber"]] = room["students"]
+                # Create student list with class information
+                room_students = []
+                for student_info in room["students"]:
+                    if isinstance(student_info, dict):
+                        room_students.append(student_info)
+                    else:
+                        # Fallback for backward compatibility
+                        room_students.append({"rollNumber": student_info, "className": "Unknown"})
+                
+                seating_arrangement[room["roomNumber"]] = room_students
+                
+                # Create class summary for this room
+                class_summary[room["roomNumber"]] = room.get("class_info", {})
 
-            return {"date": data.date, "seating_arrangement": seating_arrangement}
+            return {
+                "date": data.date, 
+                "seating_arrangement": seating_arrangement,
+                "class_summary": class_summary,
+                "class_info": class_info
+            }
+
+    @staticmethod
+    def _place_students_in_rooms_with_class_info(all_students: List[Tuple[str, int, str]], rooms: List[Dict], split: bool, max_per_class: int):
+        """Place students in rooms with class distribution logic and include class information"""
+        if split and len(rooms) > 1:
+            # Place students in rooms with class distribution
+            for student_roll, class_id, class_display_name in all_students:
+                placed = False
+                
+                # First try rooms where this class has fewer than max students
+                for room in rooms:
+                    class_count = room["class_counts"].get(class_id, 0)
+                    if (len(room["students"]) < room["capacity"] and 
+                        class_count < max_per_class):
+                        # Add student with class information
+                        student_info = {
+                            "rollNumber": student_roll,
+                            "className": class_display_name,
+                            "classId": class_id
+                        }
+                        room["students"].append(student_info)
+                        room["class_counts"][class_id] = class_count + 1
+                        
+                        # Update class info for the room
+                        if class_display_name not in room["class_info"]:
+                            room["class_info"][class_display_name] = 0
+                        room["class_info"][class_display_name] += 1
+                        
+                        placed = True
+                        break
+                
+                # If no room has space under the class limit, try any room with capacity
+                if not placed:
+                    for room in rooms:
+                        if len(room["students"]) < room["capacity"]:
+                            student_info = {
+                                "rollNumber": student_roll,
+                                "className": class_display_name,
+                                "classId": class_id
+                            }
+                            room["students"].append(student_info)
+                            class_count = room["class_counts"].get(class_id, 0)
+                            room["class_counts"][class_id] = class_count + 1
+                            
+                            # Update class info for the room
+                            if class_display_name not in room["class_info"]:
+                                room["class_info"][class_display_name] = 0
+                            room["class_info"][class_display_name] += 1
+                            
+                            placed = True
+                            break
+                
+                if not placed:
+                    raise HTTPException(status_code=500, detail="Failed to place all students despite sufficient capacity")
+        else:
+            # For non-split option, still respect the class size limit if possible
+            for student_roll, class_id, class_display_name in all_students:
+                placed = False
+                
+                # Try to place in a room where the class has fewer than max students
+                for room in rooms:
+                    if len(room["students"]) < room["capacity"]:
+                        class_count = room["class_counts"].get(class_id, 0)
+                        if class_count < max_per_class:
+                            student_info = {
+                                "rollNumber": student_roll,
+                                "className": class_display_name,
+                                "classId": class_id
+                            }
+                            room["students"].append(student_info)
+                            room["class_counts"][class_id] = class_count + 1
+                            
+                            # Update class info for the room
+                            if class_display_name not in room["class_info"]:
+                                room["class_info"][class_display_name] = 0
+                            room["class_info"][class_display_name] += 1
+                            
+                            placed = True
+                            break
+                
+                # If no room has space under the class limit, try any room with capacity
+                if not placed:
+                    for room in rooms:
+                        if len(room["students"]) < room["capacity"]:
+                            student_info = {
+                                "rollNumber": student_roll,
+                                "className": class_display_name,
+                                "classId": class_id
+                            }
+                            room["students"].append(student_info)
+                            class_count = room["class_counts"].get(class_id, 0)
+                            room["class_counts"][class_id] = class_count + 1
+                            
+                            # Update class info for the room
+                            if class_display_name not in room["class_info"]:
+                                room["class_info"][class_display_name] = 0
+                            room["class_info"][class_display_name] += 1
+                            
+                            placed = True
+                            break
+                
+                if not placed:
+                    raise HTTPException(status_code=500, detail="Failed to place all students despite sufficient capacity")
 
     @staticmethod
     def _place_students_in_rooms(all_students: List[Tuple[str, int]], rooms: List[Dict], split: bool, max_per_class: int):

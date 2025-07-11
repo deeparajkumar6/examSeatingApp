@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 
 export const useAppStore = defineStore('app', () => {
   // State
-  const title = ref('College Room Manager')
+  const title = ref('Exam Seating Scheduler')
   const loading = ref(false)
   const snackbar = ref({
     show: false,
@@ -43,10 +43,10 @@ export const useAppStore = defineStore('app', () => {
     title,
     loading,
     snackbar,
-    
+
     // Getters
     isLoading,
-    
+
     // Actions
     setLoading,
     showSnackbar,

@@ -20,9 +20,11 @@
             <v-col cols="12" md="4">
               <v-text-field
                 v-model="formData.shift"
-                label="Shift (Optional)"
+                label="Shift"
                 variant="outlined"
                 placeholder="e.g., I, II, Morning, Evening"
+                :rules="[rules.required]"
+                required
               />
             </v-col>
           </v-row>

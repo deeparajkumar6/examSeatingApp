@@ -13,7 +13,7 @@
   >
     <template #item="{ props, item }">
       <v-list-item v-bind="props">
-        <v-list-item-title>{{ item.raw.className }}</v-list-item-title>
+        <v-list-item-title>{{ item.raw.classDisplayName }}</v-list-item-title>
         <v-list-item-subtitle>
           {{ item.raw.students?.length || 0 }} students
         </v-list-item-subtitle>
@@ -22,7 +22,7 @@
     
     <template #chip="{ props, item }">
       <v-chip v-bind="props">
-        {{ getClassName(item.value) }}
+        {{ getClassDisplayName(item.value) }}
         <template #append>
           <span class="text-caption ml-1">
             ({{ getStudentCount(item.value) }})
@@ -51,20 +51,26 @@ defineEmits(['update:modelValue'])
 
 const classOptions = computed(() => {
   if (!props.classes || !Array.isArray(props.classes)) return []
-  return props.classes.map(cls => ({
-    ...cls,
-    classDisplayName: `${cls.className} (${cls.students?.length || 0} students)`
-  }))
+  return props.classes.map(cls => {
+    const shiftText = cls.shift ? ` - Shift ${cls.shift}` : ''
+    const displayName = `${cls.className}${shiftText}`
+    return {
+      ...cls,
+      classDisplayName: displayName
+    }
+  })
 })
 
 const rules = {
   required: (value) => value.length > 0 || 'At least one class must be selected'
 }
 
-const getClassName = (classId) => {
+const getClassDisplayName = (classId) => {
   if (!props.classes || !Array.isArray(props.classes)) return ''
   const cls = props.classes.find(c => c.id === classId)
-  return cls ? cls.className : ''
+  if (!cls) return ''
+  const shiftText = cls.shift ? ` - Shift ${cls.shift}` : ''
+  return `${cls.className}${shiftText}`
 }
 
 const getStudentCount = (classId) => {

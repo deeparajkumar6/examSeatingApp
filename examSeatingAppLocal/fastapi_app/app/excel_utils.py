@@ -181,6 +181,11 @@ class ExcelValidator:
             if not class_name:
                 errors.append(f"Class {class_idx + 1}: Missing class name")
             
+            # Validate shift is provided and not empty
+            shift = class_data.get('shift', '')
+            if not shift or not shift.strip():
+                errors.append(f"Class '{class_name}': Shift is required and cannot be empty")
+            
             students = class_data.get('students', [])
             if not students:
                 errors.append(f"Class '{class_name}': No students found")
