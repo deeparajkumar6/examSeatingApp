@@ -95,40 +95,61 @@ class ExcelParser:
         students = []
         df_clean = df.dropna(how='all')  # Remove completely empty rows
         
+        # Check how many columns we have
+        num_columns = len(df_clean.columns)
+        
+        # Determine column structure based on available columns
+        has_language_column = num_columns > 5
+        
         i = 0
         while i < len(df_clean):
-            row = df_clean.iloc[i]
-            
-            # Check if this is a student data row (has serial number)
-            if pd.notna(row.iloc[0]) and str(row.iloc[0]).replace('.0', '').isdigit():
-                student = {
-                    'serial_no': int(float(row.iloc[0])),
-                    'register_number': str(int(float(row.iloc[1]))) if pd.notna(row.iloc[1]) else '',
-                    'name': str(row.iloc[2]).strip() if pd.notna(row.iloc[2]) else '',
-                    'department': str(row.iloc[3]).strip() if pd.notna(row.iloc[3]) else '',
-                    'shift': str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else '',
-                    'language': str(row.iloc[5]).strip() if pd.notna(row.iloc[5]) else '',
-                    'date_of_birth': None
-                }
+            try:
+                row = df_clean.iloc[i]
                 
-                # Check next row for date of birth
-                if i + 1 < len(df_clean):
-                    next_row = df_clean.iloc[i + 1]
-                    if pd.notna(next_row.iloc[2]) and pd.isna(next_row.iloc[0]):
-                        # This is likely the date of birth row
-                        dob = next_row.iloc[2]
-                        if isinstance(dob, pd.Timestamp):
-                            student['date_of_birth'] = dob.strftime('%Y-%m-%d')
-                        else:
-                            try:
-                                # Try to parse as date string
-                                parsed_date = pd.to_datetime(str(dob))
-                                student['date_of_birth'] = parsed_date.strftime('%Y-%m-%d')
-                            except:
-                                student['date_of_birth'] = str(dob)
-                        i += 1  # Skip the date row
-                
-                students.append(student)
+                # Check if this is a student data row (has serial number)
+                if pd.notna(row.iloc[0]) and str(row.iloc[0]).replace('.0', '').isdigit():
+                    student = {
+                        'serial_no': int(float(row.iloc[0])),
+                        'register_number': str(int(float(row.iloc[1]))) if pd.notna(row.iloc[1]) else '',
+                        'name': str(row.iloc[2]).strip() if pd.notna(row.iloc[2]) else '',
+                        'department': str(row.iloc[3]).strip() if pd.notna(row.iloc[3]) else '',
+                        'shift': str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else '',
+                        'date_of_birth': None
+                    }
+                    
+                    # Handle language column - it might not exist
+                    if has_language_column:
+                        # Language column exists at index 5
+                        try:
+                            student['language'] = str(row.iloc[5]).strip() if pd.notna(row.iloc[5]) else ''
+                        except IndexError:
+                            student['language'] = ''
+                    else:
+                        # Language column doesn't exist
+                        student['language'] = ''
+                    
+                    # Check next row for date of birth
+                    if i + 1 < len(df_clean):
+                        next_row = df_clean.iloc[i + 1]
+                        if pd.notna(next_row.iloc[2]) and pd.isna(next_row.iloc[0]):
+                            # This is likely the date of birth row
+                            dob = next_row.iloc[2]
+                            if isinstance(dob, pd.Timestamp):
+                                student['date_of_birth'] = dob.strftime('%Y-%m-%d')
+                            else:
+                                try:
+                                    # Try to parse as date string
+                                    parsed_date = pd.to_datetime(str(dob))
+                                    student['date_of_birth'] = parsed_date.strftime('%Y-%m-%d')
+                                except:
+                                    student['date_of_birth'] = str(dob)
+                            i += 1  # Skip the date row
+                    
+                    students.append(student)
+                    
+            except Exception as e:
+                # Continue processing other rows if one fails
+                pass
             
             i += 1
         
@@ -153,12 +174,17 @@ class ExcelParser:
                     'students': []
                 }
             
+            # Handle language - convert empty string to None for consistency
+            language = student.get('language', '')
+            if not language or language.strip() == '':
+                language = None
+            
             # Add student to the class group
             class_groups[class_key]['students'].append({
                 'serial_no': student['serial_no'],
                 'register_number': student['register_number'],
                 'name': student['name'],
-                'language': student['language'] if student['language'] else None,
+                'language': language,
                 'date_of_birth': student['date_of_birth']
             })
         
