@@ -24,18 +24,18 @@
           <!-- Selected Classes Chips -->
           <div class="d-flex flex-wrap gap-2 mb-3">
             <v-chip
-              v-for="classId in modelValue"
-              :key="classId"
+              v-for="expandedId in modelValue"
+              :key="expandedId"
               closable
               color="primary"
               variant="tonal"
-              @click:close="removeClass(classId)"
+              @click:close="removeClass(expandedId)"
             >
               <v-icon start icon="mdi-school" />
-              {{ getClassDisplayName(classId) }}
+              {{ getExpandedClassDisplayName(expandedId) }}
               <template #append>
                 <span class="text-caption ml-1">
-                  ({{ getStudentCount(classId) }})
+                  ({{ getExpandedStudentCount(expandedId) }})
                 </span>
               </template>
             </v-chip>
@@ -44,9 +44,11 @@
           <!-- Summary Information -->
           <v-alert type="info" variant="tonal" density="compact">
             <div class="d-flex justify-space-between align-center">
-              <span>
-                <strong>Total Students:</strong> {{ totalStudents }}
-              </span>
+              <div>
+                <strong>Total Students:</strong> {{ selectionSummary.totalStudents }} •
+                <strong>Languages:</strong> {{ selectionSummary.totalLanguages }} •
+                <strong>Selections:</strong> {{ selectionSummary.totalSelections }}
+              </div>
               <v-btn
                 size="small"
                 variant="text"
@@ -58,6 +60,42 @@
               </v-btn>
             </div>
           </v-alert>
+          
+          <!-- Detailed Selection Summary -->
+          <v-expansion-panels variant="accordion" class="mt-2">
+            <v-expansion-panel>
+              <v-expansion-panel-title>
+                <v-icon icon="mdi-format-list-bulleted" class="mr-2" />
+                Selection Details
+              </v-expansion-panel-title>
+              <v-expansion-panel-text>
+                <v-simple-table density="compact">
+                  <thead>
+                    <tr>
+                      <th>Class</th>
+                      <th>Language</th>
+                      <th>Students</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="detail in selectionSummary.details" :key="`${detail.className}_${detail.shift}_${detail.language}`">
+                      <td>{{ detail.className }}{{ detail.shift ? ` - Shift ${detail.shift}` : '' }}</td>
+                      <td>
+                        <v-chip 
+                          size="x-small" 
+                          :color="getLanguageColor(detail.language)"
+                          variant="tonal"
+                        >
+                          {{ detail.language || 'No Language' }}
+                        </v-chip>
+                      </td>
+                      <td>{{ detail.studentCount }}</td>
+                    </tr>
+                  </tbody>
+                </v-simple-table>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
         </div>
       </v-card-text>
 
@@ -65,7 +103,7 @@
         <!-- Selection Dialog Button -->
         <SelectionDialog
           :model-value="modelValue"
-          :items="classes"
+          :items="expandedClasses"
           type="class"
           @update:model-value="$emit('update:modelValue', $event)"
         />
@@ -106,6 +144,19 @@
                 <v-icon icon="mdi-numeric-2-circle" />
               </template>
             </v-list-item>
+            
+            <v-divider v-if="availableLanguages.length > 0" />
+            
+            <v-list-item 
+              v-for="language in availableLanguages" 
+              :key="language"
+              @click="selectByLanguage(language)"
+            >
+              <v-list-item-title>Select {{ language }} Classes</v-list-item-title>
+              <template #prepend>
+                <v-icon icon="mdi-translate" />
+              </template>
+            </v-list-item>
           </v-list>
         </v-menu>
       </v-card-actions>
@@ -127,6 +178,13 @@
 <script setup>
 import { computed, ref } from 'vue'
 import SelectionDialog from './SelectionDialog.vue'
+import { 
+  getClassDisplayName, 
+  getUniqueLanguages, 
+  getClassLanguages,
+  expandClassesByLanguage,
+  getExpandedSelectionSummary
+} from '@/utils/classUtils'
 
 const props = defineProps({
   modelValue: {
@@ -148,32 +206,45 @@ const emit = defineEmits(['update:modelValue'])
 const showValidationError = ref(false)
 
 // Computed properties
-const totalStudents = computed(() => {
-  if (!props.classes || !Array.isArray(props.classes)) return 0
-  return props.modelValue.reduce((total, classId) => {
-    const cls = props.classes.find(c => c.id === classId)
-    return total + (cls ? (cls.students?.length || 0) : 0)
-  }, 0)
+const expandedClasses = computed(() => {
+  return expandClassesByLanguage(props.classes)
+})
+
+const selectionSummary = computed(() => {
+  return getExpandedSelectionSummary(props.modelValue, expandedClasses.value)
+})
+
+const availableLanguages = computed(() => {
+  return getUniqueLanguages(props.classes)
 })
 
 // Helper methods
-const getClassDisplayName = (classId) => {
-  if (!props.classes || !Array.isArray(props.classes)) return ''
-  const cls = props.classes.find(c => c.id === classId)
-  if (!cls) return ''
-  const shiftText = cls.shift ? ` - Shift ${cls.shift}` : ''
-  return `${cls.className}${shiftText}`
+const getExpandedClassDisplayName = (expandedId) => {
+  const expandedClass = expandedClasses.value.find(c => c.id === expandedId)
+  return expandedClass ? expandedClass.displayName : ''
 }
 
-const getStudentCount = (classId) => {
-  if (!props.classes || !Array.isArray(props.classes)) return 0
-  const cls = props.classes.find(c => c.id === classId)
-  return cls ? (cls.students?.length || 0) : 0
+const getExpandedStudentCount = (expandedId) => {
+  const expandedClass = expandedClasses.value.find(c => c.id === expandedId)
+  return expandedClass ? expandedClass.students.length : 0
+}
+
+const getLanguageColor = (language) => {
+  const colors = {
+    'Hindi': 'orange',
+    'English': 'blue',
+    'Marathi': 'green',
+    'Tamil': 'purple',
+    'Telugu': 'teal',
+    'Gujarati': 'indigo',
+    'Bengali': 'pink'
+  }
+  return colors[language] || 'grey'
 }
 
 // Selection methods
-const removeClass = (classId) => {
-  const newSelection = props.modelValue.filter(id => id !== classId)
+const removeClass = (expandedId) => {
+  const newSelection = props.modelValue.filter(id => id !== expandedId)
   emit('update:modelValue', newSelection)
 }
 
@@ -182,15 +253,22 @@ const clearAllClasses = () => {
 }
 
 const selectAllClasses = () => {
-  const allClassIds = props.classes.map(cls => cls.id)
-  emit('update:modelValue', allClassIds)
+  const allExpandedIds = expandedClasses.value.map(cls => cls.id)
+  emit('update:modelValue', allExpandedIds)
 }
 
 const selectByShift = (shift) => {
-  const shiftClasses = props.classes
+  const shiftClasses = expandedClasses.value
     .filter(cls => cls.shift === shift)
     .map(cls => cls.id)
   emit('update:modelValue', shiftClasses)
+}
+
+const selectByLanguage = (language) => {
+  const languageClasses = expandedClasses.value
+    .filter(cls => cls.language && cls.language.toLowerCase() === language.toLowerCase())
+    .map(cls => cls.id)
+  emit('update:modelValue', languageClasses)
 }
 
 // Validation

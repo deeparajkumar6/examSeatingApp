@@ -58,7 +58,9 @@ Provides comprehensive analysis:
 ### Search Functionality
 - **Case-insensitive search** across relevant fields
 - **Real-time filtering** as you type
-- **Multiple field search** (class name, shift, room number, building, etc.)
+- **Multiple field search**:
+  - **For Classes**: class name, shift, and language
+  - **For Rooms**: room number, building, and floor
 
 ### Multi-Select Options
 - **Individual selection** by clicking items or checkboxes
@@ -71,7 +73,7 @@ Provides comprehensive analysis:
 #### For Classes:
 - **Select All**: Selects all available classes
 - **Select Shift 1/2**: Filters and selects classes by shift
-- **Select Large Classes**: Selects classes with 30+ students
+- **Select by Language**: Dynamically shows options for each available language (e.g., "Select Hindi Classes", "Select English Classes")
 
 #### For Rooms:
 - **Select All**: Selects all available rooms
@@ -143,6 +145,7 @@ const validateSelection = () => {
   id: number,
   className: string,
   shift: number | null,
+  language: string | null, // Language of instruction (e.g., "Hindi", "English")
   students: Array<{
     id: number,
     name: string,
@@ -150,6 +153,15 @@ const validateSelection = () => {
   }>
 }
 ```
+
+### Display Format
+Classes are displayed with the following format:
+- **Without language**: `I B.COM -CS - Shift I`
+- **With language**: `I B.COM -CS - Shift I - Language Hindi`
+- **No shift, with language**: `I BCA - Language English`
+- **No language specified**: `I B.SC Mathematics`
+
+The language information is only displayed when available in the class data.
 
 ### Room Object
 ```javascript

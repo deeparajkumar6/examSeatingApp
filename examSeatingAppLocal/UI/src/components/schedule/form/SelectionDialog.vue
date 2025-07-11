@@ -135,6 +135,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { getClassDisplayName, getClassLanguages } from '@/utils/classUtils'
 
 const props = defineProps({
   modelValue: {
@@ -176,7 +177,12 @@ const filteredItems = computed(() => {
     if (props.type === 'class') {
       const className = item.className?.toLowerCase() || ''
       const shift = item.shift?.toString().toLowerCase() || ''
-      return className.includes(query) || shift.includes(query)
+      const language = item.language?.toLowerCase() || ''
+      const displayName = item.displayName?.toLowerCase() || ''
+      return className.includes(query) || 
+             shift.includes(query) || 
+             language.includes(query) ||
+             displayName.includes(query)
     } else {
       const roomNumber = item.roomNumber?.toLowerCase() || ''
       const building = item.roomBuilding?.toLowerCase() || ''
@@ -189,8 +195,8 @@ const filteredItems = computed(() => {
 // Item display methods
 const getItemTitle = (item) => {
   if (props.type === 'class') {
-    const shiftText = item.shift ? ` - Shift ${item.shift}` : ''
-    return `${item.className}${shiftText}`
+    // For expanded classes, use the displayName which includes language
+    return item.displayName || getClassDisplayName(item)
   } else {
     return item.roomNumber
   }
@@ -198,7 +204,17 @@ const getItemTitle = (item) => {
 
 const getItemSubtitle = (item) => {
   if (props.type === 'class') {
-    return `${item.students?.length || 0} students`
+    const studentCount = item.students?.length || 0
+    let subtitle = `${studentCount} students`
+    
+    // For expanded classes, show the language info
+    if (item.language) {
+      subtitle += ` • ${item.language}`
+    } else if (item.languageLabel) {
+      subtitle += ` • ${item.languageLabel}`
+    }
+    
+    return subtitle
   } else {
     return `${item.roomBuilding} - Floor ${item.roomFloor}`
   }

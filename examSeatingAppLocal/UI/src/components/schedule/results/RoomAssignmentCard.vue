@@ -44,6 +44,18 @@
             {{ item.className }}
           </v-chip>
         </template>
+        
+        <template #item.language="{ item }">
+          <v-chip 
+            v-if="item.language" 
+            size="x-small" 
+            :color="getLanguageColor(item.language)"
+            variant="outlined"
+          >
+            {{ item.language }}
+          </v-chip>
+          <span v-else class="text-medium-emphasis">-</span>
+        </template>
       </v-data-table>
     </v-card-text>
   </v-card>
@@ -62,7 +74,8 @@ const props = defineProps({
 const headers = [
   { title: 'Roll Number', key: 'rollNumber', sortable: true },
   { title: 'Student Name', key: 'studentName', sortable: true },
-  { title: 'Class', key: 'className', sortable: true }
+  { title: 'Class', key: 'className', sortable: true },
+  { title: 'Language', key: 'language', sortable: true }
 ]
 
 const utilizationPercentage = computed(() => {
@@ -86,5 +99,19 @@ const getClassColor = (className) => {
     return a & a
   }, 0)
   return colors[Math.abs(hash) % colors.length]
+}
+
+const getLanguageColor = (language) => {
+  // Generate consistent colors for languages
+  const languageColors = {
+    'HINDI': 'orange',
+    'ENGLISH': 'blue',
+    'TAMIL': 'green',
+    'SANSKRIT': 'purple',
+    'TELUGU': 'teal',
+    'KANNADA': 'indigo',
+    'MALAYALAM': 'pink'
+  }
+  return languageColors[language?.toUpperCase()] || 'grey'
 }
 </script>

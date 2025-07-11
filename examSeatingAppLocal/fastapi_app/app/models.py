@@ -58,9 +58,11 @@ class ScheduleRequest(BaseModel):
     classes: List[int]
     exam_rooms: List[int]
     split: bool
+    language_selections: Optional[Dict[int, List[str]]] = None  # New field: {class_id: [languages]}
 
 class ScheduleResponse(BaseModel):
     date: str
     seating_arrangement: Dict[str, List[Dict]]  # Changed to List[Dict] to include student and class info
     class_summary: Optional[Dict[str, Dict[str, int]]] = None  # Room -> Class -> Count
     class_info: Optional[Dict[int, Dict[str, str]]] = None  # Class ID -> Class details
+    language_summary: Optional[Dict[str, Dict[str, int]]] = None  # New: Room -> Language -> Count

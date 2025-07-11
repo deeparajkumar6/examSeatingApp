@@ -22,7 +22,7 @@
     
     <template #chip="{ props, item }">
       <v-chip v-bind="props">
-        {{ getClassDisplayName(item.value) }}
+        {{ getClassDisplayNameById(item.value) }}
         <template #append>
           <span class="text-caption ml-1">
             ({{ getStudentCount(item.value) }})
@@ -35,6 +35,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { getClassDisplayName } from '@/utils/classUtils'
 
 const props = defineProps({
   modelValue: {
@@ -51,26 +52,20 @@ defineEmits(['update:modelValue'])
 
 const classOptions = computed(() => {
   if (!props.classes || !Array.isArray(props.classes)) return []
-  return props.classes.map(cls => {
-    const shiftText = cls.shift ? ` - Shift ${cls.shift}` : ''
-    const displayName = `${cls.className}${shiftText}`
-    return {
-      ...cls,
-      classDisplayName: displayName
-    }
-  })
+  return props.classes.map(cls => ({
+    ...cls,
+    classDisplayName: getClassDisplayName(cls)
+  }))
 })
 
 const rules = {
   required: (value) => value.length > 0 || 'At least one class must be selected'
 }
 
-const getClassDisplayName = (classId) => {
+const getClassDisplayNameById = (classId) => {
   if (!props.classes || !Array.isArray(props.classes)) return ''
   const cls = props.classes.find(c => c.id === classId)
-  if (!cls) return ''
-  const shiftText = cls.shift ? ` - Shift ${cls.shift}` : ''
-  return `${cls.className}${shiftText}`
+  return cls ? getClassDisplayName(cls) : ''
 }
 
 const getStudentCount = (classId) => {

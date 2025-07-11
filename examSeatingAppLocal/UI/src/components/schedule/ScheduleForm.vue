@@ -27,6 +27,7 @@
         </v-col>
       </v-row>
       
+      
       <!-- Class Selection -->
       <v-row>
         <v-col cols="12">
@@ -110,6 +111,11 @@ import EnhancedClassSelector from './form/EnhancedClassSelector.vue'
 import EnhancedRoomSelector from './form/EnhancedRoomSelector.vue'
 import ScheduleOptions from './form/ScheduleOptions.vue'
 import CapacityAnalysis from './form/CapacityAnalysis.vue'
+import { 
+  expandClassesByLanguage, 
+  convertExpandedSelectionsToOriginal,
+  getExpandedSelectionSummary 
+} from '@/utils/classUtils'
 
 const props = defineProps({
   modelValue: {
@@ -150,9 +156,28 @@ const rules = {
 }
 
 // Computed properties for analysis
+const expandedClasses = computed(() => {
+  return expandClassesByLanguage(props.classes)
+})
+
+const selectedExpandedClasses = computed(() => {
+  return expandedClasses.value.filter(cls => formData.value.classes.includes(cls.id))
+})
+
 const selectedClassesData = computed(() => {
-  if (!props.classes || !Array.isArray(props.classes)) return []
-  return props.classes.filter(cls => formData.value.classes.includes(cls.id))
+  // Convert expanded selections back to original classes for compatibility
+  const selectionSummary = getExpandedSelectionSummary(formData.value.classes, expandedClasses.value)
+  return selectionSummary.details.map(detail => ({
+    id: `${detail.className}_${detail.shift}_${detail.language}`,
+    className: detail.className,
+    shift: detail.shift,
+    language: detail.language,
+    students: Array.from({ length: detail.studentCount }, (_, i) => ({
+      id: i,
+      name: `Student ${i + 1}`,
+      language: detail.language
+    }))
+  }))
 })
 
 const selectedRoomsData = computed(() => {
@@ -161,9 +186,8 @@ const selectedRoomsData = computed(() => {
 })
 
 const totalStudents = computed(() => {
-  return selectedClassesData.value.reduce((total, cls) => {
-    return total + (cls.students?.length || 0)
-  }, 0)
+  const summary = getExpandedSelectionSummary(formData.value.classes, expandedClasses.value)
+  return summary.totalStudents
 })
 
 const totalCapacity = computed(() => {
@@ -191,7 +215,24 @@ const handleSubmit = async () => {
   const isRoomSelectorValid = roomSelector.value?.validate() ?? true
   
   if (isFormValid && isClassSelectorValid && isRoomSelectorValid && canSubmit.value) {
-    emit('submit', { ...formData.value })
+    // Convert expanded class selections to original format for API
+    const convertedSelections = convertExpandedSelectionsToOriginal(
+      formData.value.classes, 
+      expandedClasses.value
+    )
+    
+    const submitData = {
+      date: formData.value.date,
+      title: formData.value.title,
+      session: formData.value.session,
+      classes: convertedSelections.classSelections, // Original class IDs for API
+      exam_rooms: formData.value.exam_rooms,
+      split: formData.value.split,
+      language_selections: convertedSelections.languageSelections // Language selections for API
+    }
+    
+    console.log('Submitting data with language selections:', submitData)
+    emit('submit', submitData)
   }
 }
 
