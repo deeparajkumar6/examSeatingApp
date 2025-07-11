@@ -36,8 +36,9 @@
               No classes available. Please add classes first.
             </v-alert>
           </div>
-          <ClassSelector 
+          <EnhancedClassSelector 
             v-else
+            ref="classSelector"
             v-model="formData.classes"
             :classes="classes"
           />
@@ -53,10 +54,24 @@
               No exam rooms available. Please add exam rooms first.
             </v-alert>
           </div>
-          <RoomSelector 
+          <EnhancedRoomSelector 
             v-else
+            ref="roomSelector"
             v-model="formData.exam_rooms"
             :exam-rooms="examRooms"
+            :total-students="totalStudents"
+          />
+        </v-col>
+      </v-row>
+      
+      <!-- Capacity Analysis -->
+      <v-row v-if="formData.classes.length > 0 && formData.exam_rooms.length > 0">
+        <v-col cols="12">
+          <CapacityAnalysis 
+            :selected-classes="selectedClassesData"
+            :selected-rooms="selectedRoomsData"
+            :total-students="totalStudents"
+            :total-capacity="totalCapacity"
           />
         </v-col>
       </v-row>
@@ -91,9 +106,10 @@
 import { ref, computed, watch, toRefs } from 'vue'
 import DatePicker from './form/DatePicker.vue'
 import SessionSelector from './form/SessionSelector.vue'
-import ClassSelector from './form/ClassSelector.vue'
-import RoomSelector from './form/RoomSelector.vue'
+import EnhancedClassSelector from './form/EnhancedClassSelector.vue'
+import EnhancedRoomSelector from './form/EnhancedRoomSelector.vue'
 import ScheduleOptions from './form/ScheduleOptions.vue'
+import CapacityAnalysis from './form/CapacityAnalysis.vue'
 
 const props = defineProps({
   modelValue: {
@@ -120,6 +136,8 @@ const emit = defineEmits(['update:modelValue', 'submit'])
 const { classes, examRooms, loading } = toRefs(props)
 
 const form = ref(null)
+const classSelector = ref(null)
+const roomSelector = ref(null)
 const valid = ref(false)
 
 const formData = computed({
@@ -130,6 +148,29 @@ const formData = computed({
 const rules = {
   required: (value) => !!value || 'This field is required'
 }
+
+// Computed properties for analysis
+const selectedClassesData = computed(() => {
+  if (!props.classes || !Array.isArray(props.classes)) return []
+  return props.classes.filter(cls => formData.value.classes.includes(cls.id))
+})
+
+const selectedRoomsData = computed(() => {
+  if (!props.examRooms || !Array.isArray(props.examRooms)) return []
+  return props.examRooms.filter(room => formData.value.exam_rooms.includes(room.id))
+})
+
+const totalStudents = computed(() => {
+  return selectedClassesData.value.reduce((total, cls) => {
+    return total + (cls.students?.length || 0)
+  }, 0)
+})
+
+const totalCapacity = computed(() => {
+  return selectedRoomsData.value.reduce((total, room) => {
+    return total + (room.roomCapacity || 0)
+  }, 0)
+})
 
 const canSubmit = computed(() => {
   return formData.value.date &&
@@ -142,8 +183,14 @@ const canSubmit = computed(() => {
 })
 
 const handleSubmit = async () => {
-  const { valid: isValid } = await form.value.validate()
-  if (isValid && canSubmit.value) {
+  // Validate form
+  const { valid: isFormValid } = await form.value.validate()
+  
+  // Validate selectors
+  const isClassSelectorValid = classSelector.value?.validate() ?? true
+  const isRoomSelectorValid = roomSelector.value?.validate() ?? true
+  
+  if (isFormValid && isClassSelectorValid && isRoomSelectorValid && canSubmit.value) {
     emit('submit', { ...formData.value })
   }
 }
