@@ -81,7 +81,7 @@
                   <v-icon icon="mdi-school" class="mr-1" />
                   Classes ({{ selectedClasses.length }})
                 </div>
-                <v-simple-table density="compact">
+                <v-table density="compact">
                   <thead>
                     <tr>
                       <th>Class</th>
@@ -105,7 +105,7 @@
                       </td>
                     </tr>
                   </tbody>
-                </v-simple-table>
+                </v-table>
               </v-col>
 
               <!-- Rooms Breakdown -->
@@ -114,7 +114,7 @@
                   <v-icon icon="mdi-door" class="mr-1" />
                   Rooms ({{ selectedRooms.length }})
                 </div>
-                <v-simple-table density="compact">
+                <v-table density="compact">
                   <thead>
                     <tr>
                       <th>Room</th>
@@ -142,7 +142,7 @@
                       </td>
                     </tr>
                   </tbody>
-                </v-simple-table>
+                </v-table>
               </v-col>
             </v-row>
           </v-expansion-panel-text>

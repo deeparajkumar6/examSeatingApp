@@ -68,7 +68,7 @@
                   Room Details
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
-                  <v-simple-table density="compact">
+                  <v-table density="compact">
                     <thead>
                       <tr>
                         <th>Room</th>
@@ -92,7 +92,7 @@
                         </td>
                       </tr>
                     </tbody>
-                  </v-simple-table>
+                  </v-table>
                 </v-expansion-panel-text>
               </v-expansion-panel>
             </v-expansion-panels>

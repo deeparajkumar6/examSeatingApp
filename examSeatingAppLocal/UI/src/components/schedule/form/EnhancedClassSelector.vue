@@ -69,7 +69,7 @@
                 Selection Details
               </v-expansion-panel-title>
               <v-expansion-panel-text>
-                <v-simple-table density="compact">
+                <v-table density="compact">
                   <thead>
                     <tr>
                       <th>Class</th>
@@ -92,7 +92,7 @@
                       <td>{{ detail.studentCount }}</td>
                     </tr>
                   </tbody>
-                </v-simple-table>
+                </v-table>
               </v-expansion-panel-text>
             </v-expansion-panel>
           </v-expansion-panels>
