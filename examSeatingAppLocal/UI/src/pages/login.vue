@@ -22,9 +22,11 @@
               <v-text-field
                 v-model="credentials.password"
                 label="Password"
-                type="password"
+                :type="showPassword ? 'text' : 'password'"
                 variant="outlined"
                 prepend-inner-icon="mdi-lock"
+                :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                @click:append-inner="showPassword = !showPassword"
                 :rules="[rules.required]"
                 required
               />
@@ -61,6 +63,7 @@ const appStore = useAppStore()
 const form = ref(null)
 const valid = ref(false)
 const loading = ref(false)
+const showPassword = ref(false)
 
 const credentials = ref({
   username: '',

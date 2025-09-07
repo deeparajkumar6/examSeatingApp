@@ -160,3 +160,7 @@ dist-ssr/
 
 # PDF files (optional - uncomment if you don't want to track generated PDFs)
 # *.pdf
+
+# Deployment build outputs
+deployment/
+exam_seating_app_deployment_*.zip
