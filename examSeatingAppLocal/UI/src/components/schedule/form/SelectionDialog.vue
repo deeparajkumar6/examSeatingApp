@@ -26,17 +26,68 @@
 
       <v-divider />
 
-      <!-- Search Bar -->
+      <!-- Search Bar and Filters -->
       <v-card-text class="pb-0">
-        <v-text-field
-          v-model="searchQuery"
-          :placeholder="searchPlaceholder"
-          prepend-inner-icon="mdi-magnify"
-          variant="outlined"
-          density="compact"
-          clearable
-          hide-details
-        />
+        <v-row>
+          <v-col cols="12" md="8">
+            <v-text-field
+              v-model="searchQuery"
+              :placeholder="searchPlaceholder"
+              prepend-inner-icon="mdi-magnify"
+              variant="outlined"
+              density="compact"
+              clearable
+              hide-details
+            />
+          </v-col>
+          <v-col cols="12" md="4" class="d-flex align-center">
+            <v-btn
+              size="small"
+              variant="outlined"
+              color="primary"
+              prepend-icon="mdi-select-all"
+              :disabled="filteredItems.length === 0"
+              @click="selectAllFiltered"
+              block
+            >
+              Select All ({{ filteredItems.length }})
+            </v-btn>
+          </v-col>
+        </v-row>
+        
+        <!-- Class-specific filters -->
+        <div v-if="type === 'class'" class="mt-3">
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-select
+                v-model="shiftFilter"
+                label="Filter by Shift"
+                :items="shiftOptions"
+                variant="outlined"
+                density="compact"
+                clearable
+                hide-details
+              />
+            </v-col>
+            <v-col cols="12" md="6" class="d-flex align-center">
+              <v-radio-group
+                v-model="splitByLanguage"
+                inline
+                hide-details
+                density="compact"
+              >
+                <v-radio
+                  label="Group by Class"
+                  :value="false"
+                />
+                <v-radio
+                  label="Split by Language"
+                  :value="true"
+                />
+              </v-radio-group>
+            </v-col>
+          </v-row>
+        </div>
       </v-card-text>
 
       <!-- Selection Summary -->
@@ -48,6 +99,7 @@
               size="small"
               variant="text"
               color="error"
+              prepend-icon="mdi-close"
               @click="clearSelection"
             >
               Clear All
@@ -159,6 +211,8 @@ const emit = defineEmits(['update:modelValue'])
 const dialog = ref(false)
 const searchQuery = ref('')
 const selectedItems = ref([...props.modelValue])
+const shiftFilter = ref(null)
+const splitByLanguage = ref(false) // Default to group by class
 
 // Computed properties for dynamic content
 const buttonColor = computed(() => props.type === 'class' ? 'primary' : 'secondary')
@@ -168,12 +222,71 @@ const dialogIcon = computed(() => props.type === 'class' ? 'mdi-school' : 'mdi-d
 const dialogTitle = computed(() => `Select ${props.type === 'class' ? 'Classes' : 'Exam Rooms'}`)
 const searchPlaceholder = computed(() => `Search ${props.type === 'class' ? 'classes' : 'rooms'}...`)
 
-// Filtered items based on search
+// Shift options for filtering
+const shiftOptions = computed(() => {
+  if (props.type !== 'class') return []
+  const shifts = new Set()
+  props.items.forEach(item => {
+    if (item.shift) {
+      shifts.add(item.shift)
+    }
+  })
+  return Array.from(shifts).sort().map(shift => ({
+    title: `Shift ${shift}`,
+    value: shift
+  }))
+})
+
+// Items to display based on language splitting preference
+const displayItems = computed(() => {
+  if (props.type !== 'class') return props.items
+  
+  if (splitByLanguage.value) {
+    // Use expanded classes (split by language)
+    return props.items
+  } else {
+    // Group by original class, combine language data
+    const groupedClasses = new Map()
+    
+    props.items.forEach(item => {
+      const originalId = item.originalId || item.id
+      
+      if (groupedClasses.has(originalId)) {
+        // Merge students from different language groups
+        const existing = groupedClasses.get(originalId)
+        existing.students = [...existing.students, ...item.students]
+      } else {
+        // Create new grouped entry
+        groupedClasses.set(originalId, {
+          ...item,
+          id: originalId,
+          originalId: originalId,
+          displayName: getClassDisplayName(item),
+          language: null, // No specific language for grouped view
+          languageLabel: 'All Languages',
+          students: [...item.students]
+        })
+      }
+    })
+    
+    return Array.from(groupedClasses.values())
+  }
+})
+
+// Filtered items based on search and shift filter
 const filteredItems = computed(() => {
-  if (!searchQuery.value) return props.items
+  let items = displayItems.value
+  
+  // Apply shift filter
+  if (shiftFilter.value && props.type === 'class') {
+    items = items.filter(item => item.shift === shiftFilter.value)
+  }
+  
+  // Apply search filter
+  if (!searchQuery.value) return items
 
   const query = searchQuery.value.toLowerCase()
-  return props.items.filter(item => {
+  return items.filter(item => {
     if (props.type === 'class') {
       const className = item.className?.toLowerCase() || ''
       const shift = item.shift?.toString().toLowerCase() || ''
@@ -260,6 +373,11 @@ const clearSelection = () => {
   selectedItems.value = []
 }
 
+const selectAllFiltered = () => {
+  const filteredIds = filteredItems.value.map(item => item.id)
+  selectedItems.value = [...new Set([...selectedItems.value, ...filteredIds])]
+}
+
 const applySelection = () => {
   emit('update:modelValue', [...selectedItems.value])
   dialog.value = false
@@ -274,10 +392,17 @@ watch(() => props.modelValue, (newValue) => {
 watch(dialog, (isOpen) => {
   if (!isOpen) {
     searchQuery.value = ''
+    shiftFilter.value = null
   } else {
     // Sync selected items when dialog opens
     selectedItems.value = [...props.modelValue]
   }
+})
+
+// Watch for language splitting toggle changes
+watch(splitByLanguage, () => {
+  // Clear selection when switching between modes to avoid confusion
+  selectedItems.value = []
 })
 </script>
 

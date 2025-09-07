@@ -151,4 +151,11 @@ const cancel = () => {
   dialogModel.value = false;
   resetForm();
 };
+
+// Watch for dialog close to reset form
+watch(() => props.modelValue, (newValue) => {
+  if (!newValue) {
+    resetForm();
+  }
+});
 </script>

@@ -43,7 +43,7 @@ const scheduleData = ref({
   session: '',
   classes: [],
   exam_rooms: [],
-  split: false
+  split: true
 })
 
 // Computed

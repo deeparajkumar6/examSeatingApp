@@ -2,7 +2,8 @@
   <v-select
     :model-value="modelValue"
     label="Session"
-    prepend-icon="mdi-clock-outline"
+    variant="outlined"
+    prepend-inner-icon="mdi-clock-outline"
     :items="sessionOptions"
     item-title="title"
     item-value="value"

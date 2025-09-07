@@ -211,7 +211,54 @@ const expandedClasses = computed(() => {
 })
 
 const selectionSummary = computed(() => {
-  return getExpandedSelectionSummary(props.modelValue, expandedClasses.value)
+  // Check if we have expanded IDs or original class IDs
+  const hasExpandedIds = props.modelValue.some(id => 
+    expandedClasses.value.some(cls => cls.id === id)
+  )
+  
+  if (hasExpandedIds) {
+    // Use existing function for expanded classes
+    return getExpandedSelectionSummary(props.modelValue, expandedClasses.value)
+  } else {
+    // Handle original class IDs (Group by Class mode)
+    let totalStudents = 0
+    let totalLanguages = new Set()
+    const selectionDetails = []
+    
+    props.modelValue.forEach(classId => {
+      const originalClass = props.classes.find(cls => cls.id === classId)
+      if (originalClass) {
+        const studentCount = originalClass.students?.length || 0
+        totalStudents += studentCount
+        
+        // Collect languages from students
+        if (originalClass.students) {
+          originalClass.students.forEach(student => {
+            if (student.language) {
+              totalLanguages.add(student.language)
+            }
+          })
+        }
+        
+        selectionDetails.push({
+          className: originalClass.className,
+          shift: originalClass.shift,
+          language: 'All Languages',
+          studentCount: studentCount,
+          displayName: getClassDisplayName(originalClass)
+        })
+      }
+    })
+    
+    return {
+      totalStudents,
+      totalLanguages: totalLanguages.size,
+      totalClasses: props.modelValue.length,
+      totalSelections: props.modelValue.length,
+      languages: Array.from(totalLanguages).sort(),
+      details: selectionDetails
+    }
+  }
 })
 
 const availableLanguages = computed(() => {
@@ -219,14 +266,28 @@ const availableLanguages = computed(() => {
 })
 
 // Helper methods
-const getExpandedClassDisplayName = (expandedId) => {
-  const expandedClass = expandedClasses.value.find(c => c.id === expandedId)
-  return expandedClass ? expandedClass.displayName : ''
+const getExpandedClassDisplayName = (classId) => {
+  // First try to find in expanded classes
+  const expandedClass = expandedClasses.value.find(c => c.id === classId)
+  if (expandedClass) {
+    return expandedClass.displayName
+  }
+  
+  // If not found, try original classes (Group by Class mode)
+  const originalClass = props.classes.find(c => c.id === classId)
+  return originalClass ? getClassDisplayName(originalClass) : ''
 }
 
-const getExpandedStudentCount = (expandedId) => {
-  const expandedClass = expandedClasses.value.find(c => c.id === expandedId)
-  return expandedClass ? expandedClass.students.length : 0
+const getExpandedStudentCount = (classId) => {
+  // First try to find in expanded classes
+  const expandedClass = expandedClasses.value.find(c => c.id === classId)
+  if (expandedClass) {
+    return expandedClass.students.length
+  }
+  
+  // If not found, try original classes (Group by Class mode)
+  const originalClass = props.classes.find(c => c.id === classId)
+  return originalClass ? (originalClass.students?.length || 0) : 0
 }
 
 const getLanguageColor = (language) => {

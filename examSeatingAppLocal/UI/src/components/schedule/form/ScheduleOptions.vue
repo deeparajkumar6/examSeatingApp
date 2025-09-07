@@ -19,7 +19,7 @@
         class="mt-3"
       >
         <div v-if="modelValue">
-          <strong>Split Mode:</strong> Students from the same class will be distributed across multiple rooms to prevent cheating.
+          <strong>Split Mode:</strong> Students from the same class will be distributed across multiple rooms.
         </div>
         <div v-else>
           <strong>Keep Together:</strong> Students from the same class will be kept in the same room when possible.

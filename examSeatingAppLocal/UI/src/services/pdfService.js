@@ -414,8 +414,18 @@ export class PDFService {
     const roomTitle = `${room.room_number} - ${room.room_building} (${room.room_floor})`
     doc.text(roomTitle, 25, startY + 6)
     
+    // Sort students by class first, then by roll number
+    const sortedStudents = [...room.students].sort((a, b) => {
+      // First sort by class name
+      const classComparison = a.className.localeCompare(b.className)
+      if (classComparison !== 0) return classComparison
+      
+      // Then sort by roll number
+      return a.rollNumber.localeCompare(b.rollNumber)
+    })
+    
     // Students table directly below room header (no capacity info)
-    const tableData = room.students.map(student => [
+    const tableData = sortedStudents.map(student => [
       student.rollNumber,
       student.studentName,
       student.className

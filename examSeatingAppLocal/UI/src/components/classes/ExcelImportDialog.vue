@@ -10,7 +10,7 @@
         <!-- File Upload Section -->
         <div v-if="!validationResult && !importResult">
           <v-alert type="info" variant="tonal" class="mb-4">
-            <v-icon left>mdi-information</v-icon>
+            
             Upload an Excel file (.xlsx or .xls) containing student data in the required format.
           </v-alert>
 
@@ -69,9 +69,6 @@
             variant="tonal" 
             class="mb-4"
           >
-            <v-icon left>
-              {{ validationResult.valid ? 'mdi-check-circle' : 'mdi-alert-circle' }}
-            </v-icon>
             {{ validationResult.valid ? 'File validation successful!' : 'File validation failed!' }}
           </v-alert>
 
@@ -138,7 +135,7 @@
         <!-- Import Results -->
         <div v-if="importResult">
           <v-alert type="success" variant="tonal" class="mb-4">
-            <v-icon left>mdi-check-circle</v-icon>
+            
             {{ importResult.message }}
           </v-alert>
 
@@ -229,7 +226,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { bulkImportApi } from '@/services/bulkImportApi'
 
 const props = defineProps({
@@ -327,6 +324,13 @@ const cancel = () => {
   resetDialog()
   dialogModel.value = false
 }
+
+// Watch for dialog close to reset data
+watch(() => props.modelValue, (newValue) => {
+  if (!newValue) {
+    resetDialog()
+  }
+})
 </script>
 
 <style scoped>

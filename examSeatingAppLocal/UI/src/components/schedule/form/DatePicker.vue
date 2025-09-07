@@ -33,12 +33,18 @@ const emit = defineEmits(['update:modelValue'])
 const menu = ref(false)
 
 const dateValue = computed(() => {
-  return props.modelValue ? new Date(props.modelValue) : null
+  if (!props.modelValue) return null
+  // Parse the date string directly to avoid timezone issues
+  const [year, month, day] = props.modelValue.split('-').map(Number)
+  return new Date(year, month - 1, day)
 })
 
 const displayDate = computed(() => {
   if (!props.modelValue) return ''
-  return new Date(props.modelValue).toLocaleDateString()
+  // Parse and format the date to avoid timezone issues
+  const [year, month, day] = props.modelValue.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  return date.toLocaleDateString()
 })
 
 const rules = {
@@ -47,7 +53,11 @@ const rules = {
 
 const updateDate = (date) => {
   if (date) {
-    const formattedDate = date.toISOString().split('T')[0]
+    // Format date as YYYY-MM-DD without timezone conversion
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const formattedDate = `${year}-${month}-${day}`
     emit('update:modelValue', formattedDate)
   }
   menu.value = false

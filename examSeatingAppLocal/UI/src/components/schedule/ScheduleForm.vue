@@ -165,19 +165,46 @@ const selectedExpandedClasses = computed(() => {
 })
 
 const selectedClassesData = computed(() => {
-  // Convert expanded selections back to original classes for compatibility
-  const selectionSummary = getExpandedSelectionSummary(formData.value.classes, expandedClasses.value)
-  return selectionSummary.details.map(detail => ({
-    id: `${detail.className}_${detail.shift}_${detail.language}`,
-    className: detail.className,
-    shift: detail.shift,
-    language: detail.language,
-    students: Array.from({ length: detail.studentCount }, (_, i) => ({
-      id: i,
-      name: `Student ${i + 1}`,
-      language: detail.language
+  // Check if we have expanded IDs or original class IDs
+  const hasExpandedIds = formData.value.classes.some(id => 
+    expandedClasses.value.some(cls => cls.id === id)
+  )
+  
+  if (hasExpandedIds) {
+    // Use existing logic for expanded classes
+    const selectionSummary = getExpandedSelectionSummary(formData.value.classes, expandedClasses.value)
+    return selectionSummary.details.map(detail => ({
+      id: `${detail.className}_${detail.shift}_${detail.language}`,
+      className: detail.className,
+      shift: detail.shift,
+      language: detail.language,
+      students: Array.from({ length: detail.studentCount }, (_, i) => ({
+        id: i,
+        name: `Student ${i + 1}`,
+        language: detail.language
+      }))
     }))
-  }))
+  } else {
+    // Handle original class IDs (Group by Class mode)
+    return formData.value.classes.map(classId => {
+      const originalClass = props.classes.find(cls => cls.id === classId)
+      if (originalClass) {
+        const studentCount = originalClass.students?.length || 0
+        return {
+          id: `${originalClass.className}_${originalClass.shift}_all`,
+          className: originalClass.className,
+          shift: originalClass.shift,
+          language: 'All Languages',
+          students: Array.from({ length: studentCount }, (_, i) => ({
+            id: i,
+            name: `Student ${i + 1}`,
+            language: 'Mixed'
+          }))
+        }
+      }
+      return null
+    }).filter(Boolean)
+  }
 })
 
 const selectedRoomsData = computed(() => {
@@ -186,8 +213,22 @@ const selectedRoomsData = computed(() => {
 })
 
 const totalStudents = computed(() => {
-  const summary = getExpandedSelectionSummary(formData.value.classes, expandedClasses.value)
-  return summary.totalStudents
+  // Check if we have expanded IDs or original class IDs
+  const hasExpandedIds = formData.value.classes.some(id => 
+    expandedClasses.value.some(cls => cls.id === id)
+  )
+  
+  if (hasExpandedIds) {
+    // Use existing logic for expanded classes
+    const summary = getExpandedSelectionSummary(formData.value.classes, expandedClasses.value)
+    return summary.totalStudents
+  } else {
+    // Handle original class IDs (Group by Class mode)
+    return formData.value.classes.reduce((total, classId) => {
+      const originalClass = props.classes.find(cls => cls.id === classId)
+      return total + (originalClass?.students?.length || 0)
+    }, 0)
+  }
 })
 
 const totalCapacity = computed(() => {
@@ -215,23 +256,43 @@ const handleSubmit = async () => {
   const isRoomSelectorValid = roomSelector.value?.validate() ?? true
   
   if (isFormValid && isClassSelectorValid && isRoomSelectorValid && canSubmit.value) {
-    // Convert expanded class selections to original format for API
-    const convertedSelections = convertExpandedSelectionsToOriginal(
-      formData.value.classes, 
-      expandedClasses.value
+    // Check if we have expanded IDs or original class IDs
+    const hasExpandedIds = formData.value.classes.some(id => 
+      expandedClasses.value.some(cls => cls.id === id)
     )
     
-    const submitData = {
-      date: formData.value.date,
-      title: formData.value.title,
-      session: formData.value.session,
-      classes: convertedSelections.classSelections, // Original class IDs for API
-      exam_rooms: formData.value.exam_rooms,
-      split: formData.value.split,
-      language_selections: convertedSelections.languageSelections // Language selections for API
+    let submitData
+    
+    if (hasExpandedIds) {
+      // Convert expanded class selections to original format for API
+      const convertedSelections = convertExpandedSelectionsToOriginal(
+        formData.value.classes, 
+        expandedClasses.value
+      )
+      
+      submitData = {
+        date: formData.value.date,
+        title: formData.value.title,
+        session: formData.value.session,
+        classes: convertedSelections.classSelections, // Original class IDs for API
+        exam_rooms: formData.value.exam_rooms,
+        split: formData.value.split,
+        language_selections: convertedSelections.languageSelections // Language selections for API
+      }
+    } else {
+      // Handle original class IDs (Group by Class mode)
+      submitData = {
+        date: formData.value.date,
+        title: formData.value.title,
+        session: formData.value.session,
+        classes: formData.value.classes, // Already original class IDs
+        exam_rooms: formData.value.exam_rooms,
+        split: formData.value.split
+        // No language_selections for Group by Class mode
+      }
     }
     
-    console.log('Submitting data with language selections:', submitData)
+    console.log('Submitting data:', submitData)
     emit('submit', submitData)
   }
 }
