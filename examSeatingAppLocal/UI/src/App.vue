@@ -1,7 +1,7 @@
 <template>
   <v-app>
-    <AppNavigation />
-    <AppMain />
+    <AppNavigation v-if="isAuthenticated" />
+    <AppMain :class="{ 'no-nav': !isAuthenticated }" />
     
     <!-- Global Snackbar -->
     <v-snackbar
@@ -24,17 +24,27 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 import AppNavigation from '@/components/layout/AppNavigation.vue'
 import AppMain from '@/components/layout/AppMain.vue'
 
 const appStore = useAppStore()
+const authStore = useAuthStore()
 
 const snackbar = computed(() => appStore.snackbar)
+const isAuthenticated = computed(() => authStore.isAuthenticated)
 const hideSnackbar = () => appStore.hideSnackbar()
+
+// Initialize auth on app start
+onMounted(() => {
+  authStore.initializeAuth()
+})
 </script>
 
 <style scoped>
-/* Global app styles can be moved to separate style files */
+.no-nav {
+  margin-left: 0 !important;
+}
 </style>

@@ -13,6 +13,7 @@
     </template>
     <v-date-picker
       :model-value="dateValue"
+      :min="minDate"
       @update:model-value="updateDate"
     />
   </v-menu>
@@ -31,6 +32,12 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const menu = ref(false)
+
+// Get today's date for minimum date restriction
+const minDate = computed(() => {
+  const today = new Date()
+  return new Date(today.getFullYear(), today.getMonth(), today.getDate())
+})
 
 const dateValue = computed(() => {
   if (!props.modelValue) return null

@@ -20,6 +20,12 @@ export const useNavigationStore = defineStore('navigation', () => {
       icon: 'mdi-calendar-check',
       to: '/schedule',
       color: 'primary'
+    },
+    {
+      title: 'User Management',
+      icon: 'mdi-account-group',
+      to: '/users',
+      color: 'primary'
     }
   ])
 

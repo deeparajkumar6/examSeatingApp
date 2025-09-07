@@ -60,6 +60,22 @@ def init_database():
     )
     """)
     
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        name TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    
+    # Create default admin user
+    cursor.execute(
+        "INSERT OR IGNORE INTO users (username, password, name) VALUES (?, ?, ?)",
+        ("admin", "Admin@123", "Administrator")
+    )
+    
     # Add new columns to existing tables if they don't exist
     try:
         cursor.execute("ALTER TABLE classes ADD COLUMN shift TEXT")

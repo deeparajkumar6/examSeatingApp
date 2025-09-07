@@ -8,6 +8,7 @@
 import { createRouter, createWebHistory } from 'vue-router/auto'
 import { setupLayouts } from 'virtual:generated-layouts'
 import { routes } from 'vue-router/auto-routes'
+import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,6 +27,34 @@ router.onError((err, to) => {
     }
   } else {
     console.error(err)
+  }
+})
+
+// Router guard for authentication
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+  
+  // Initialize auth if not already done
+  if (!authStore.isAuthenticated) {
+    authStore.initializeAuth()
+  }
+  
+  // Allow access to login page
+  if (to.path === '/login') {
+    // If already authenticated, redirect to home
+    if (authStore.isAuthenticated) {
+      next('/')
+    } else {
+      next()
+    }
+    return
+  }
+  
+  // Check if user is authenticated for protected routes
+  if (!authStore.isAuthenticated) {
+    next('/login')
+  } else {
+    next()
   }
 })
 

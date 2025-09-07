@@ -66,3 +66,22 @@ class ScheduleResponse(BaseModel):
     class_summary: Optional[Dict[str, Dict[str, int]]] = None  # Room -> Class -> Count
     class_info: Optional[Dict[int, Dict[str, str]]] = None  # Class ID -> Class details
     language_summary: Optional[Dict[str, Dict[str, int]]] = None  # New: Room -> Language -> Count
+
+class UserModel(BaseModel):
+    username: str
+    password: str
+    name: str
+
+class UserResponseModel(BaseModel):
+    id: int
+    username: str
+    name: str
+    created_at: str
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class LoginResponse(BaseModel):
+    token: str
+    user: UserResponseModel
