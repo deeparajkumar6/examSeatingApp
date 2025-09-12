@@ -199,11 +199,11 @@ def main():
     ui_dir = Path(__file__).parent
     os.chdir(ui_dir)
     
-    PORT = 80
+    PORT = 3001
     
     print("🚀 Starting Exam Seating App UI Server...")
     print(f"📍 UI will be available at: http://localhost:{PORT}")
-    print("🌐 Access from network: http://YOUR_SERVER_IP:3000")
+    print("🌐 Access from network: http://YOUR_SERVER_IP:3001")
     
     try:
         with socketserver.TCPServer(("0.0.0.0", PORT), CustomHTTPRequestHandler) as httpd:
@@ -253,8 +253,10 @@ echo python start_server.py >> "%APP_DIR%\\start_api.bat"
 
 REM Create UI service batch file
 echo @echo off > "%APP_DIR%\\start_ui.bat"
-echo REM Kill any process using port 8080 >> "%APP_DIR%\\start_ui.bat"
-echo powershell -Command "Get-NetTCPConnection -LocalPort 80 -ErrorAction SilentlyContinue ^^^| ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }" >> "%APP_DIR%\\start_ui.bat"
+echo REM Kill any process using port 3001 >> "%APP_DIR%\\start_ui.bat"
+echo powershell -Command "Get-NetTCPConnection -LocalPort 3001 -ErrorAction SilentlyContinue ^^^| ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }" >> "%APP_DIR%\\start_ui.bat"
+echo cd /d "%APP_DIR%\\ui" >> "%APP_DIR%\\start_ui.bat"
+echo python start_server.py >> "%APP_DIR%\\start_ui.bat"
 echo cd /d "%APP_DIR%\\ui" >> "%APP_DIR%\\start_ui.bat"
 echo python start_server.py >> "%APP_DIR%\\start_ui.bat"
 
@@ -266,16 +268,16 @@ echo timeout /t 3 /nobreak ^> nul >> "%APP_DIR%\\start_all.bat"
 echo start "UI Server" cmd /k "%APP_DIR%\\start_ui.bat" >> "%APP_DIR%\\start_all.bat"
 echo echo ✅ Both servers started! >> "%APP_DIR%\\start_all.bat"
 echo echo 📍 API: http://localhost:8000 >> "%APP_DIR%\\start_all.bat"
-echo echo 📍 UI: http://localhost >> "%APP_DIR%\\start_all.bat"
+echo echo 📍 UI: http://localhost:3001 >> "%APP_DIR%\\start_all.bat"
 
 echo 🔧 Configuring Windows Firewall...
-netsh advfirewall firewall add rule name="Exam Seating App UI" dir=in action=allow protocol=TCP localport=80
+netsh advfirewall firewall add rule name="Exam Seating App UI" dir=in action=allow protocol=TCP localport=3001
 netsh advfirewall firewall add rule name="Exam Seating App API" dir=in action=allow protocol=TCP localport=8000
 netsh advfirewall firewall set rule group="Network Discovery" new enable=Yes
 
 echo 📋 Creating startup tasks...
-schtasks /create /tn "ExamSeatingApp-API" /tr "\"%APP_DIR%\\start_api.bat\"" /sc onstart /ru "SYSTEM" /f
-schtasks /create /tn "ExamSeatingApp-UI" /tr "\"%APP_DIR%\\start_ui.bat\"" /sc onstart /ru "SYSTEM" /f
+schtasks /create /tn "ExamSeatingApp-API" /tr "\"%APP_DIR%\\start_api.bat\"" /sc onstart /ru "SYSTEM" /rl HIGHEST /f
+schtasks /create /tn "ExamSeatingApp-UI" /tr "\"%APP_DIR%\\start_ui.bat\"" /sc onstart /ru "SYSTEM" /rl HIGHEST /f
 if %errorlevel% neq 0 (
     echo ⚠️  Could not create startup tasks. You may need to run as Administrator.
     echo 💡 Manual setup: Add start_api.bat and start_ui.bat to Windows startup folder
@@ -291,7 +293,7 @@ echo ✅ Setup completed!
 echo 🚀 To start manually: run start_all.bat
 echo 🔄 Auto-start: Configured to start on system boot
 echo 📍 API will be available at: http://YOUR_SERVER_IP:8000
-echo 📍 UI will be available at: http://YOUR_SERVER_IP
+echo 📍 UI will be available at: http://YOUR_SERVER_IP:3001
 echo.
 pause
 '''
@@ -318,7 +320,7 @@ fi
 
 echo "🔧 Configuring firewall..."
 sudo ufw allow 8000/tcp
-sudo ufw allow 80/tcp
+sudo ufw allow 3001/tcp
 
 echo "🔧 Creating systemd services..."
 
@@ -330,7 +332,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=$USER
+User=root
 WorkingDirectory=$APP_DIR/api
 ExecStart=/usr/bin/python3 $APP_DIR/api/start_server.py
 Restart=always
@@ -348,7 +350,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=$USER
+User=root
 WorkingDirectory=$APP_DIR/ui
 ExecStart=/usr/bin/python3 $APP_DIR/ui/start_server.py
 Restart=always
@@ -371,7 +373,7 @@ echo ""
 echo "✅ Setup completed and services started!"
 echo "🚀 Services are now running and will auto-start on boot"
 echo "📍 API available at: http://$(hostname -I | awk '{print $1}'):8000"
-echo "📍 UI available at: http://$(hostname -I | awk '{print $1})"
+echo "📍 UI available at: http://$(hostname -I | awk '{print $1}'):3001"
 echo ""
 echo "🔧 Service management commands:"
 echo "  Check status: sudo systemctl status exam-seating-api exam-seating-ui"
@@ -400,7 +402,7 @@ start "UI Server" cmd /k "%APP_DIR%\\start_ui.bat"
 
 echo ✅ Both servers started!
 echo 📍 API: http://localhost:8000
-echo 📍 UI: http://localhost
+echo 📍 UI: http://localhost:3001
 pause
 '''
     
@@ -430,7 +432,7 @@ UI_PID=$!
 
 echo "✅ Both servers started!"
 echo "📍 API: http://$(hostname -I | awk '{print $1}'):8000 (PID: $API_PID)"
-echo "📍 UI: http://$(hostname -I | awk '{print $1}') (PID: $UI_PID)"
+echo "📍 UI: http://$(hostname -I | awk '{print $1}'):3001 (PID: $UI_PID)"
 echo ""
 echo "Press Ctrl+C to stop both servers"
 
@@ -455,7 +457,7 @@ def create_config_file(config_dir):
   },
   "ui": {
     "host": "0.0.0.0", 
-    "port": 80
+    "port": 3001
   },
   "database": {
     "path": "database.db"
@@ -483,7 +485,7 @@ def create_readme(deploy_dir):
 
 ## Access Points
 - **API**: http://YOUR_SERVER_IP:8000
-- **UI**: http://YOUR_SERVER_IP
+- **UI**: http://YOUR_SERVER_IP:3001
 
 ## Default Login
 - Username: `admin`
@@ -510,7 +512,7 @@ def create_readme(deploy_dir):
 **Linux**: `sudo journalctl -u exam-seating-api -f`
 
 ### Firewall
-Make sure ports 8000 and 80 are open in your firewall.
+Make sure ports 8000 and 3001 are open in your firewall.
 
 ### Network Access
 Replace `YOUR_SERVER_IP` with your actual server IP address.

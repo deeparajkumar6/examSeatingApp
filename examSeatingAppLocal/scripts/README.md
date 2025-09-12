@@ -48,14 +48,14 @@ python3 --version  # Should show Python 3.8+
 
 ### Network Ports:
 - **Port 8000**: API Server
-- **Port 3000**: UI Server
+- **Port 3001**: UI Server
 - Make sure these ports are open in firewall
 
 ## Usage:
 1. **Build**: Run the build script on your development machine
 2. **Transfer**: Copy the generated zip file to your server
 3. **Deploy**: Unzip and run the setup script on the server
-4. **Access**: Open http://server-ip:3000 in browser
+4. **Access**: Open http://server-ip:3001 in browser
 
 ## Validate Server is Running:
 
@@ -68,7 +68,7 @@ tasklist | findstr python
 
 # Check specific ports
 netstat -an | findstr :8000
-netstat -an | findstr :3000
+netstat -an | findstr :3001
 
 # Check Task Scheduler
 schtasks /query /tn "ExamSeatingApp"
@@ -82,11 +82,11 @@ sudo systemctl status exam-seating-ui
 
 # Check if ports are listening
 sudo netstat -tlnp | grep :8000
-sudo netstat -tlnp | grep :3000
+sudo netstat -tlnp | grep :3001
 
 # Or using ss command
 ss -tlnp | grep :8000
-ss -tlnp | grep :3000
+ss -tlnp | grep :3001
 ```
 
 ### Test API and UI:
@@ -98,19 +98,19 @@ curl http://localhost:8000
 curl http://localhost:8000/health
 
 # Test UI (should return HTML)
-curl http://localhost:3000
+curl http://localhost:3001
 ```
 
 **From Network:**
 ```bash
 # Replace YOUR_SERVER_IP with actual server IP
 curl http://YOUR_SERVER_IP:8000
-curl http://YOUR_SERVER_IP:3000
+curl http://YOUR_SERVER_IP:3001
 ```
 
 **Browser Test:**
 - API: `http://YOUR_SERVER_IP:8000` (should show JSON message)
-- UI: `http://YOUR_SERVER_IP:3000` (should show login page)
+- UI: `http://YOUR_SERVER_IP:3001` (should show login page)
 
 ### Troubleshooting:
 
@@ -123,4 +123,4 @@ curl http://YOUR_SERVER_IP:3000
 
 **Firewall issues:**
 - **Windows**: Check Windows Defender Firewall
-- **Linux**: `sudo ufw allow 8000` and `sudo ufw allow 3000`
+- **Linux**: `sudo ufw allow 8000` and `sudo ufw allow 3001`
