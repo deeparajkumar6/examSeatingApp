@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form
 from fastapi.responses import JSONResponse
 from typing import Dict
 from ..models import BulkImportResponse
@@ -137,3 +137,47 @@ async def validate_excel(file: UploadFile = File(...)):
                 "summary": None
             }
         )
+
+@router.post("/excel/selective", response_model=BulkImportResponse)
+async def selective_import_excel(
+    file: UploadFile = File(...),
+    selected_classes: str = Form(...)
+):
+    """
+    Import only selected classes from Excel file
+    
+    Args:
+        file: Excel file to import
+        selected_classes: JSON string of selected class objects (e.g., '[{"class_name":"I B.COM -CS","shift":"I"}]')
+    """
+    
+    # Validate file type
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        raise HTTPException(
+            status_code=400, 
+            detail="Invalid file type. Please upload an Excel file (.xlsx or .xls)"
+        )
+    
+    try:
+        import json
+        
+        # Parse selected class identifiers
+        selected_class_identifiers = json.loads(selected_classes)
+        
+        # Read file content
+        file_content = await file.read()
+        
+        if len(file_content) == 0:
+            raise HTTPException(status_code=400, detail="Empty file uploaded")
+        
+        # Process the Excel file with selective import
+        result = ClassService.selective_import_from_excel(file_content, selected_class_identifiers)
+        
+        return result
+        
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid selected_classes format")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")

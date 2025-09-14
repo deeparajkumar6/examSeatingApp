@@ -276,6 +276,70 @@ class ClassService:
             )
 
 
+    @staticmethod
+    def selective_import_from_excel(file_content: bytes, selected_class_identifiers: List[dict]) -> BulkImportResponse:
+        """Import only selected classes from Excel file"""
+        try:
+            # Parse Excel file
+            parsed_data = ExcelParser.parse_student_excel(file_content)
+            
+            # Filter only selected classes by matching class_name and shift
+            all_classes = parsed_data["classes"]
+            selected_classes = []
+            
+            for class_data in all_classes:
+                for selected in selected_class_identifiers:
+                    if (class_data["class_name"] == selected["class_name"] and 
+                        class_data["shift"] == selected["shift"]):
+                        selected_classes.append(class_data)
+                        break
+            
+            if not selected_classes:
+                raise HTTPException(status_code=400, detail="No valid classes selected for import")
+            
+            classes_created = 0
+            students_created = 0
+            details = []
+            
+            with get_db_cursor() as cursor:
+                for class_data in selected_classes:
+                    class_name = class_data["class_name"]
+                    shift = class_data["shift"]
+                    students = class_data["students"]
+                    
+                    # Check if class already exists
+                    cursor.execute("SELECT id FROM classes WHERE className = ? AND shift = ?", (class_name, shift.strip()))
+                    existing_class = cursor.fetchone()
+                    
+                    if existing_class:
+                        class_id = existing_class[0]
+                        cursor.execute("DELETE FROM students WHERE classId = ?", (class_id,))
+                        action = "updated"
+                    else:
+                        cursor.execute("INSERT INTO classes (className, shift) VALUES (?, ?)", (class_name, shift.strip()))
+                        class_id = cursor.lastrowid
+                        classes_created += 1
+                        action = "created"
+                    
+                    # Add students
+                    class_students_added = 0
+                    for student in students:
+                        try:
+                            cursor.execute("INSERT INTO students (rollNumber, studentName, language, dateOfBirth, classId) VALUES (?, ?, ?, ?, ?)", (student["register_number"], student["name"], student["language"], student["date_of_birth"], class_id))
+                            class_students_added += 1
+                            students_created += 1
+                        except sqlite3.IntegrityError:
+                            pass
+                    
+                    details.append({"className": class_name, "shift": shift.strip(), "action": action, "studentsAdded": class_students_added})
+            
+            return BulkImportResponse(message=f"Successfully imported {len(selected_classes)} selected classes with {students_created} students", classesCreated=classes_created, studentsCreated=students_created, details=details)
+        
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error during selective import: {str(e)}")
+
 class StudentService:
     @staticmethod
     def get_students_by_class(class_id: int) -> List[StudentResponseModel]:

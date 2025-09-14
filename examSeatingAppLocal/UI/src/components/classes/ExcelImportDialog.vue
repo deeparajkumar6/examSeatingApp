@@ -11,16 +11,17 @@
         <div v-if="!validationResult && !importResult">
           <v-alert type="info" variant="tonal" class="mb-4">
             
-            Upload an Excel file (.xlsx or .xls) containing student data in the required format.
+            Upload Excel files (.xlsx or .xls) containing student data in the required format.
           </v-alert>
 
           <v-file-input
-            v-model="selectedFile"
-            label="Select Excel File"
+            v-model="selectedFiles"
+            label="Select Excel Files"
             accept=".xlsx,.xls"
             prepend-icon="mdi-file-excel"
             :rules="fileRules"
             :loading="validating"
+            multiple
             @change="handleFileChange"
           />
 
@@ -120,21 +121,43 @@
 
             <!-- Class Details -->
             <div class="mt-4">
-              <h4>Classes Preview:</h4>
+              <h4>Classes to Import (Select/Deselect):</h4>
               <v-list>
                 <v-list-item
                   v-for="(classInfo, index) in validationResult.summary.classes"
                   :key="index"
                 >
                   <template #prepend>
-                    <v-icon>mdi-school</v-icon>
+                    <v-checkbox
+                      v-model="selectedClasses"
+                      :value="index"
+                      color="primary"
+                    />
                   </template>
                   <v-list-item-title>{{ classInfo.class_name }}</v-list-item-title>
                   <v-list-item-subtitle>
                     Shift: {{ classInfo.shift }} | Students: {{ classInfo.student_count }}
                   </v-list-item-subtitle>
+                  <template #append>
+                    <v-btn
+                      icon="mdi-delete"
+                      size="small"
+                      color="error"
+                      variant="text"
+                      @click="removeClassFromSelection(index)"
+                    />
+                  </template>
                 </v-list-item>
               </v-list>
+              
+              <v-alert 
+                v-if="validationResult && validationResult.valid && selectedClasses.length === 0"
+                type="warning" 
+                variant="tonal" 
+                class="mt-3"
+              >
+                Please select at least one class to import.
+              </v-alert>
             </div>
           </div>
         </div>
@@ -208,18 +231,18 @@
         
         <!-- Validate button -->
         <v-btn
-          v-if="selectedFile && !validationResult && !importResult"
+          v-if="selectedFiles && selectedFiles.length > 0 && !validationResult && !importResult"
           color="info"
           :loading="validating"
           @click="validateFile"
         >
           <v-icon left>mdi-check</v-icon>
-          Validate File
+          Validate Files
         </v-btn>
         
         <!-- Import button -->
         <v-btn
-          v-if="validationResult && validationResult.valid && !importResult"
+          v-if="validationResult && validationResult.valid && selectedClasses.length > 0 && !importResult"
           color="primary"
           :loading="importing"
           @click="importFile"
@@ -246,7 +269,8 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'import-success'])
 
 // Reactive data
-const selectedFile = ref(null)
+const selectedFiles = ref([])
+const selectedClasses = ref([])
 const validating = ref(false)
 const importing = ref(false)
 const validationResult = ref(null)
@@ -261,7 +285,7 @@ const dialogModel = computed({
 // Validation rules
 const fileRules = [
   (value) => {
-    if (!value || value.length === 0) return 'Please select a file'
+    if (!value || value.length === 0) return 'Please select at least one file'
     const file = Array.isArray(value) ? value[0] : value
     if (!file.name.match(/\.(xlsx|xls)$/i)) {
       return 'Please select an Excel file (.xlsx or .xls)'
@@ -276,15 +300,53 @@ const handleFileChange = () => {
   validationResult.value = null
   importResult.value = null
 }
-
+const removeClassFromSelection = (index) => {
+  // Remove from selected classes
+  const selectedIndex = selectedClasses.value.indexOf(index)
+  if (selectedIndex > -1) {
+    selectedClasses.value.splice(selectedIndex, 1)
+  }
+}
 const validateFile = async () => {
-  if (!selectedFile.value) return
+  if (!selectedFiles.value || selectedFiles.value.length === 0) return
   
   try {
     validating.value = true
-    const file = Array.isArray(selectedFile.value) ? selectedFile.value[0] : selectedFile.value
-    const result = await bulkImportApi.validateExcel(file)
-    validationResult.value = result
+    
+    // Process all files and combine results
+    let allClasses = []
+    let allErrors = []
+    let academicYear = null
+    
+    for (const file of selectedFiles.value) {
+      try {
+        const result = await bulkImportApi.validateExcel(file)
+        if (result.valid && result.summary) {
+          allClasses.push(...result.summary.classes)
+          if (!academicYear) academicYear = result.summary.academic_year
+        } else {
+          allErrors.push(...result.errors.map(err => `${file.name}: ${err}`))
+        }
+      } catch (error) {
+        allErrors.push(`${file.name}: ${error.response?.data?.detail || 'Validation failed'}`)
+      }
+    }
+    
+    validationResult.value = {
+      valid: allErrors.length === 0,
+      errors: allErrors,
+      summary: allErrors.length === 0 ? {
+        academic_year: academicYear,
+        total_classes: allClasses.length,
+        total_students: allClasses.reduce((sum, cls) => sum + cls.student_count, 0),
+        classes: allClasses
+      } : null
+    }
+    
+    // Select all classes by default
+    if (allErrors.length === 0) {
+      selectedClasses.value = allClasses.map((_, index) => index)
+    }
   } catch (error) {
     console.error('Validation failed:', error)
     validationResult.value = {
@@ -298,16 +360,58 @@ const validateFile = async () => {
 }
 
 const importFile = async () => {
-  if (!selectedFile.value || !validationResult.value?.valid) return
+  if (!selectedFiles.value || selectedFiles.value.length === 0 || !validationResult.value?.valid) return
   
   try {
     importing.value = true
-    const file = Array.isArray(selectedFile.value) ? selectedFile.value[0] : selectedFile.value
-    const result = await bulkImportApi.importExcel(file)
-    importResult.value = result
+    // Import all selected files
+    let allResults = []
+    for (const file of selectedFiles.value) {
+      try {
+        let result
+        
+        // Check if we need selective import (not all classes selected)
+        const totalClasses = validationResult.value?.summary?.classes?.length || 0
+        const useSelectiveImport = selectedClasses.value.length < totalClasses && selectedClasses.value.length > 0
+        
+        if (useSelectiveImport) {
+          // Send actual class identifiers instead of indices
+          const selectedClassData = selectedClasses.value.map(index => {
+            const classInfo = validationResult.value.summary.classes[index]
+            return {
+              class_name: classInfo.class_name,
+              shift: classInfo.shift
+            }
+          })
+          result = await bulkImportApi.selectiveImportExcel(file, selectedClassData)
+        } else {
+          result = await bulkImportApi.importExcel(file)
+        }
+        
+        allResults.push({
+          fileName: file.name,
+          success: true,
+          ...result
+        })
+      } catch (error) {
+        allResults.push({
+          fileName: file.name,
+          success: false,
+          error: error.response?.data?.detail || 'Import failed'
+        })
+      }
+    }
+    
+    // Use the first successful result for compatibility
+    const firstSuccess = allResults.find(r => r.success)
+    if (firstSuccess) {
+      importResult.value = firstSuccess
+      emit("import-success")
+    } else {
+      importResult.value = { success: false, message: "All file imports failed", details: allResults }
+    }
     
     // Emit success event to refresh classes
-    emit('import-success')
   } catch (error) {
     console.error('Import failed:', error)
     // Show error in validation result format
@@ -322,7 +426,7 @@ const importFile = async () => {
 }
 
 const resetDialog = () => {
-  selectedFile.value = null
+  selectedFiles.value = []; selectedClasses.value = []
   validationResult.value = null
   importResult.value = null
 }
