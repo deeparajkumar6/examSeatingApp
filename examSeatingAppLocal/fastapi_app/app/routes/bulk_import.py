@@ -34,7 +34,7 @@ async def bulk_import_excel(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="Empty file uploaded")
         
         # Process the Excel file
-        result = ClassService.bulk_import_from_excel(file_content)
+        result = ClassService.bulk_import_from_excel(file_content, file.filename)
         
         return result
         
@@ -100,7 +100,7 @@ async def validate_excel(file: UploadFile = File(...)):
         # Parse Excel file (without importing)
         from ..excel_utils import ExcelParser, ExcelValidator
         
-        parsed_data = ExcelParser.parse_student_excel(file_content)
+        parsed_data = ExcelParser.parse_student_excel(file_content, file.filename)
         validation_errors = ExcelValidator.validate_parsed_data(parsed_data)
         
         # Prepare summary
@@ -171,7 +171,7 @@ async def selective_import_excel(
             raise HTTPException(status_code=400, detail="Empty file uploaded")
         
         # Process the Excel file with selective import
-        result = ClassService.selective_import_from_excel(file_content, selected_class_identifiers)
+        result = ClassService.selective_import_from_excel(file_content, selected_class_identifiers, file.filename)
         
         return result
         

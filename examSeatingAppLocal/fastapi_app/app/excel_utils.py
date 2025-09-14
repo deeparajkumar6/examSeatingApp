@@ -8,7 +8,7 @@ class ExcelParser:
     """Utility class for parsing Excel files with student data"""
     
     @staticmethod
-    def parse_student_excel(file_content: bytes) -> Dict:
+    def parse_student_excel(file_content: bytes, filename: str = "Unknown") -> Dict:
         """
         Parse Excel file with student data from all sheets:
         - Each sheet represents different years/classes
@@ -67,7 +67,7 @@ class ExcelParser:
                     
                     if students:
                         # Group students by class and shift for this sheet
-                        sheet_classes = ExcelParser._group_students_by_class(students)
+                        sheet_classes = ExcelParser._group_students_by_class(students, filename, sheet_name)
                         all_classes.extend(sheet_classes)
                         
                 except Exception as sheet_error:
@@ -175,13 +175,19 @@ class ExcelParser:
         return students
     
     @staticmethod
-    def _group_students_by_class(students: List[Dict]) -> List[Dict]:
+    def _group_students_by_class(students: List[Dict], filename: str = "Unknown", sheet_name: str = "Sheet1") -> List[Dict]:
         """Group students by class and shift"""
         class_groups = {}
         
         for student in students:
-            class_name = student['department']
+            original_class_name = student['department']
             shift = student['shift']
+            
+            # Clean up filename (remove extension)
+            clean_filename = filename.rsplit('.', 1)[0] if '.' in filename else filename
+            
+            # Create enhanced class name with filename and sheet name
+            class_name = f"{original_class_name} ({clean_filename} - {sheet_name})"
             
             # Create a unique key for class + shift combination
             class_key = f"{class_name}_{shift}" if shift else class_name

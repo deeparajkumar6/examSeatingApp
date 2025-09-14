@@ -172,11 +172,11 @@ class ClassService:
             cursor.execute("DELETE FROM classes WHERE id=?", (class_id,))
 
     @staticmethod
-    def bulk_import_from_excel(file_content: bytes) -> BulkImportResponse:
+    def bulk_import_from_excel(file_content: bytes, filename: str = "Unknown") -> BulkImportResponse:
         """Bulk import classes and students from Excel file"""
         try:
             # Parse Excel file
-            parsed_data = ExcelParser.parse_student_excel(file_content)
+            parsed_data = ExcelParser.parse_student_excel(file_content, filename)
 
             # Validate parsed data
             validation_errors = ExcelValidator.validate_parsed_data(parsed_data)
@@ -277,11 +277,11 @@ class ClassService:
 
 
     @staticmethod
-    def selective_import_from_excel(file_content: bytes, selected_class_identifiers: List[dict]) -> BulkImportResponse:
+    def selective_import_from_excel(file_content: bytes, selected_class_identifiers: List[dict], filename: str = "Unknown") -> BulkImportResponse:
         """Import only selected classes from Excel file"""
         try:
             # Parse Excel file
-            parsed_data = ExcelParser.parse_student_excel(file_content)
+            parsed_data = ExcelParser.parse_student_excel(file_content, filename)
             
             # Filter only selected classes by matching class_name and shift
             all_classes = parsed_data["classes"]
