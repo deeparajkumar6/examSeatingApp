@@ -242,9 +242,9 @@ class ExcelValidator:
                 student_errors = ExcelValidator._validate_student(student, student_idx + 1, class_name)
                 errors.extend(student_errors)
                 
-                # Check for duplicate register numbers within the same class
+                # Check for duplicate register numbers within the same class (only if register number exists)
                 reg_num = student.get('register_number')
-                if reg_num:
+                if reg_num and reg_num.strip():  # Only check if register number is not empty
                     if reg_num in register_numbers:
                         errors.append(f"Class '{class_name}': Duplicate register number '{reg_num}'")
                     register_numbers.add(reg_num)
@@ -256,7 +256,17 @@ class ExcelValidator:
         """Validate individual student data"""
         errors = []
         
-        if not student.get('register_number'):
+        # Check if this is a first year class (register numbers may not be available)
+        class_upper = class_name.upper()
+        is_first_year = (class_upper.startswith('I ') or 
+                        class_upper.startswith('I B.') or 
+                        class_upper.startswith('I M.') or
+                        class_upper.startswith('I BSC') or
+                        class_upper.startswith('I MSC') or
+                        class_upper == 'I YEAR' or
+                        ' I YEAR' in class_upper)
+        
+        if not student.get('register_number') and not is_first_year:
             errors.append(f"Class '{class_name}', Student {student_idx}: Missing register number")
         
         if not student.get('name'):

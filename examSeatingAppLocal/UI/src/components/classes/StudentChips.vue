@@ -12,7 +12,7 @@
           :color="student.language ? 'primary' : 'default'"
           :variant="student.language ? 'outlined' : 'flat'"
         >
-          {{ student.rollNumber }}
+          {{ student.rollNumber || student.studentName || `Student ${student.id}` }}
         </v-chip>
       </template>
       <div>

@@ -39,6 +39,11 @@
         density="compact"
         class="elevation-0"
       >
+        <template #item.rollNumber="{ item }">
+          <span v-if="item.rollNumber">{{ item.rollNumber }}</span>
+          <span v-else class="text-medium-emphasis">Not assigned</span>
+        </template>
+        
         <template #item.className="{ item }">
           <v-chip size="x-small" :color="getClassColor(item.className)">
             {{ item.className }}
