@@ -95,6 +95,37 @@ export const useScheduleStore = defineStore('schedule', () => {
     clearSchedule,
     exportSummaryPDF,
     exportDetailedPDF,
-    exportToPdf // Legacy method
+    exportToPdf, // Legacy method
+    
+    // Excel export methods
+    exportSummaryExcel: async () => {
+      if (!currentSchedule.value) return
+      
+      try {
+        const { ExcelExportService } = await import('@/services/excelExportService')
+        await ExcelExportService.exportSummaryExcel(currentSchedule.value)
+        const appStore = useAppStore()
+        appStore.showSuccess('Summary Excel exported successfully')
+      } catch (error) {
+        console.error('Failed to export summary Excel:', error)
+        const appStore = useAppStore()
+        appStore.showError('Failed to export summary Excel')
+      }
+    },
+    
+    exportDetailedExcel: async () => {
+      if (!currentSchedule.value) return
+      
+      try {
+        const { ExcelExportService } = await import('@/services/excelExportService')
+        await ExcelExportService.exportDetailedExcel(currentSchedule.value)
+        const appStore = useAppStore()
+        appStore.showSuccess('Detailed Excel exported successfully')
+      } catch (error) {
+        console.error('Failed to export detailed Excel:', error)
+        const appStore = useAppStore()
+        appStore.showError('Failed to export detailed Excel')
+      }
+    }
   }
 })

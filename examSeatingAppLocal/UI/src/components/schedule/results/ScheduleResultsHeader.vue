@@ -46,6 +46,39 @@
         </v-list>
       </v-menu>
       
+      <!-- Excel Export Menu -->
+      <v-menu>
+        <template #activator="{ props }">
+          <v-btn
+            color="success"
+            variant="outlined"
+            v-bind="props"
+          >
+            <v-icon left>mdi-file-excel</v-icon>
+            Export Excel
+            <v-icon right>mdi-chevron-down</v-icon>
+          </v-btn>
+        </template>
+        
+        <v-list>
+          <v-list-item @click="$emit('export-summary-excel')">
+            <template #prepend>
+              <v-icon>mdi-table</v-icon>
+            </template>
+            <v-list-item-title>Summary Excel</v-list-item-title>
+            <v-list-item-subtitle>Room-wise class summary</v-list-item-subtitle>
+          </v-list-item>
+          
+          <v-list-item @click="$emit('export-detailed-excel')">
+            <template #prepend>
+              <v-icon>mdi-table-multiple</v-icon>
+            </template>
+            <v-list-item-title>Detailed Excel</v-list-item-title>
+            <v-list-item-subtitle>One sheet per room</v-list-item-subtitle>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+      
       <v-btn
         color="error"
         variant="outlined"
@@ -66,7 +99,7 @@ defineProps({
   }
 })
 
-defineEmits(['export-summary-pdf', 'export-detailed-pdf', 'clear'])
+defineEmits(['export-summary-pdf', 'export-detailed-pdf', 'export-summary-excel', 'export-detailed-excel', 'clear'])
 
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('en-US', {

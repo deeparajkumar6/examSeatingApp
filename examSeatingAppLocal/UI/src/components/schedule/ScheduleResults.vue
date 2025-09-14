@@ -3,7 +3,8 @@
     <ScheduleResultsHeader 
       :schedule="schedule"
       @export-summary-pdf="$emit('export-summary-pdf')"
-      @export-detailed-pdf="$emit('export-detailed-pdf')"
+      @export-summary-excel="$emit('export-summary-excel')"
+      @export-detailed-excel="$emit('export-detailed-excel')"
       @clear="$emit('clear')"
     />
     
@@ -46,5 +47,5 @@ defineProps({
   }
 })
 
-defineEmits(['export-summary-pdf', 'export-detailed-pdf', 'clear'])
+defineEmits(['export-summary-pdf', 'export-detailed-pdf', 'export-summary-excel', 'export-detailed-excel', 'clear'])
 </script>
