@@ -4,6 +4,8 @@
       <ClassHeader 
         @add-class="openAddDialog" 
         @import-excel="openImportDialog"
+        @download-template="handleDownloadTemplate"
+        ref="classHeader"
       />
       <ClassTable 
         :classes="classes"
@@ -32,6 +34,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useClassesStore } from '@/stores/classes'
 import { useAppStore } from '@/stores/app'
+import api from '@/services/api'
 import ClassHeader from './ClassHeader.vue'
 import ClassTable from './ClassTable.vue'
 import ClassDialog from './ClassDialog.vue'
@@ -100,6 +103,39 @@ const handleImportSuccess = async () => {
   await classesStore.fetchClasses()
   importDialog.value.show = false
   appStore.showSuccess('Classes imported successfully!')
+}
+
+const handleDownloadTemplate = async () => {
+  try {
+    const response = await api.get("/class/download/sample-template", {
+      responseType: "blob"
+    })
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement("a")
+    link.href = url
+    
+    const contentDisposition = response.headers["content-disposition"]
+    let filename = "Class_Import_Template.xlsx"
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/)
+      if (filenameMatch) {
+        filename = filenameMatch[1]
+      }
+    }
+    
+    link.setAttribute("download", filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+    
+    appStore.showSuccess("Template downloaded successfully!")
+    
+  } catch (error) {
+    console.error("Failed to download template:", error)
+    appStore.showError("Failed to download template")
+  }
 }
 
 // Lifecycle

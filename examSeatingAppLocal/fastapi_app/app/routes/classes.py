@@ -28,3 +28,20 @@ def delete_class(class_id: int):
     """Delete a class and all its students"""
     ClassService.delete_class(class_id)
     return {"message": "Class deleted successfully"}
+
+@router.get("/download/sample-template")
+def download_sample_template():
+    """Download sample Excel template for class data import"""
+    from ..sample_template_service import SampleTemplateService
+    from datetime import datetime
+    from fastapi.responses import StreamingResponse
+    
+    template_file = SampleTemplateService.generate_sample_template()
+    
+    filename = f"Class_Import_Template_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    
+    return StreamingResponse(
+        iter([template_file.getvalue()]),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
