@@ -10,7 +10,8 @@ class ExcelParser:
     @staticmethod
     def parse_student_excel(file_content: bytes) -> Dict:
         """
-        Parse Excel file with student data in the specific format:
+        Parse Excel file with student data from all sheets:
+        - Each sheet represents different years/classes
         - Row with academic year info
         - Header row with columns
         - Student data split across two rows (main data + date of birth)
@@ -36,32 +37,50 @@ class ExcelParser:
         }
         """
         try:
-            # Read Excel file from bytes
-            df_raw = pd.read_excel(io.BytesIO(file_content), header=None)
+            # Read all sheet names
+            excel_file = pd.ExcelFile(io.BytesIO(file_content))
+            sheet_names = excel_file.sheet_names
             
-            # Extract academic year
-            academic_year = ExcelParser._extract_academic_year(df_raw)
+            all_classes = []
+            academic_year = None
             
-            # Find header row
-            header_row = ExcelParser._find_header_row(df_raw)
-            if header_row is None:
-                raise HTTPException(status_code=400, detail="Could not find header row in Excel file")
+            # Process each sheet
+            for sheet_name in sheet_names:
+                try:
+                    # Read sheet data
+                    df_raw = pd.read_excel(io.BytesIO(file_content), sheet_name=sheet_name, header=None)
+                    
+                    # Extract academic year from first sheet if not already found
+                    if academic_year is None:
+                        academic_year = ExcelParser._extract_academic_year(df_raw)
+                    
+                    # Find header row
+                    header_row = ExcelParser._find_header_row(df_raw)
+                    if header_row is None:
+                        continue  # Skip sheets without proper headers
+                    
+                    # Read data with proper header
+                    df = pd.read_excel(io.BytesIO(file_content), sheet_name=sheet_name, header=header_row)
+                    
+                    # Extract students from this sheet
+                    students = ExcelParser._extract_students(df)
+                    
+                    if students:
+                        # Group students by class and shift for this sheet
+                        sheet_classes = ExcelParser._group_students_by_class(students)
+                        all_classes.extend(sheet_classes)
+                        
+                except Exception as sheet_error:
+                    # Continue processing other sheets if one fails
+                    print(f"Warning: Error processing sheet '{sheet_name}': {str(sheet_error)}")
+                    continue
             
-            # Read data with proper header
-            df = pd.read_excel(io.BytesIO(file_content), header=header_row)
-            
-            # Extract students
-            students = ExcelParser._extract_students(df)
-            
-            if not students:
-                raise HTTPException(status_code=400, detail="No student data found in Excel file")
-            
-            # Group students by class and shift
-            classes = ExcelParser._group_students_by_class(students)
+            if not all_classes:
+                raise HTTPException(status_code=400, detail="No student data found in any sheet of the Excel file")
             
             return {
                 'academic_year': academic_year,
-                'classes': classes
+                'classes': all_classes
             }
             
         except Exception as e:
