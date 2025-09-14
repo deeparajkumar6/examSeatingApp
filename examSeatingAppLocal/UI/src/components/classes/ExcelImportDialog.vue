@@ -35,12 +35,12 @@
                 <div class="format-info">
                   <h4>Required Structure:</h4>
                   <ul>
-                    <li><strong>Row 4:</strong> Academic year (e.g., "I YEAR 2023-24")</li>
-                    <li><strong>Row 5:</strong> Column headers</li>
-                    <li><strong>Data rows:</strong> Student information split across two rows</li>
+                    <li><strong>Row 1:</strong> Academic year (e.g., "I YEAR 2024-25")</li>
+                    <li><strong>Row 2:</strong> Column headers</li>
+                    <li><strong>Row 3+:</strong> Student data alternating between main row and date of birth row</li>
                   </ul>
 
-                  <h4>Column Headers (Row 5):</h4>
+                  <h4>Column Headers (Row 2):</h4>
                   <v-chip-group>
                     <v-chip size="small">S.No</v-chip>
                     <v-chip size="small">Register Number</v-chip>
@@ -53,10 +53,17 @@
                   <h4>Student Data Format:</h4>
                   <p>Each student requires two consecutive rows:</p>
                   <ul>
-                    <li><strong>Row 1:</strong> Serial No, Register No, Name, Department, Shift, Language</li>
-                    <li><strong>Row 2:</strong> Empty, Empty, Date of Birth, Empty, Empty, Empty</li>
+                    <li><strong>Main Row:</strong> Serial No, Register No (can be empty), Student Name, Department, Shift, Language</li>
+                    <li><strong>DOB Row:</strong> Empty, Empty, Date of Birth (DD/MM/YYYY), Empty, Empty, Empty</li>
                   </ul>
-                </div>
+                  <h4>Important Notes:</h4>
+                  <ul>
+                    <li><strong>Column Structure:</strong> A=S.No, B=Register Number, C=Names/DOB, D=Dept/Class, E=Shift, F=Language</li>
+                    <li><strong>Register Number:</strong> Column B can be left empty for first year students, required for 2nd/3rd year</li>
+                    <li><strong>Language:</strong> Optional column (Hindi, Tamil, Sanskrit, etc.)</li>
+                    <li><strong>Date Format:</strong> DD/MM/YYYY or Excel date format</li>
+                    <li><strong>Multiple Sheets:</strong> Each sheet can contain different year/class data</li>
+                  </ul>                </div>
               </v-expansion-panel-text>
             </v-expansion-panel>
           </v-expansion-panels>

@@ -79,11 +79,11 @@ Get information about the expected Excel file format.
   "format": {
     "description": "Excel file should contain student data in the following format:",
     "structure": [
-      "Row 1-3: Empty or metadata",
-      "Row 4: Academic year (e.g., 'I YEAR 2023-24')",
-      "Row 5: Headers - S.No | Register Number | Names with Date of Birth | Dept/Class | Shift | Language",
-      "Row 6+: Student data alternating between:",
-      "  - Main row: Serial No | Register No | Student Name | Department | Shift | Language",
+
+      "Row 1: Academic year (e.g., 'I YEAR 2024-25')",
+      "Row 2: Headers - S.No | Register Number | Names with Date of Birth | Dept/Class | Shift | Language",
+      "Row 3+: Student data alternating between:",
+      "  - Main row: Serial No | Register No (can be empty) | Student Name | Department | Shift | Language",
       "  - DOB row: Empty | Empty | Date of Birth | Empty | Empty | Empty"
     ]
   }
@@ -94,8 +94,8 @@ Get information about the expected Excel file format.
 
 ### Required Structure
 
-1. **Row 4**: Academic year information (e.g., "I YEAR 2023-24")
-2. **Row 5**: Column headers:
+1. **Row 1**: Academic year information (e.g., "I YEAR 2024-25")
+2. **Row 2**: Column headers:
    - S.No
    - Register Number
    - Names with Date of Birth
@@ -111,9 +111,9 @@ Get information about the expected Excel file format.
 
 | S.No | Register Number | Names with Date of Birth | Dept / Class | Shift | Language |
 |------|----------------|---------------------------|--------------|-------|----------|
-| 1    | 122302982      | Amirtha                   | I B.COM -CS  | I     | TAMIL    |
+| 1    |                | Amirtha                   | I B.COM -CS  | I     | TAMIL    |
 |      |                | 2000-06-22                |              |       |          |
-| 2    | 122302983      | Bmirtha                   | I B.COM -CS  | I     | HINDI    |
+| 2    |                | Bmirtha                   | I B.COM -CS  | I     | HINDI    |
 |      |                | 2001-06-22                |              |       |          |
 
 ## Field Mappings

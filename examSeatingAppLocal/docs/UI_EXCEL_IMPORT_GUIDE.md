@@ -71,9 +71,9 @@ The Excel import functionality has been successfully integrated into the Classes
 ## Excel File Format Support
 
 ### Supported Structure
-- **Row 4**: Academic year information
-- **Row 5**: Column headers
-- **Data rows**: Student information in two-row format
+- **Row 1**: Academic year information (e.g., "I YEAR 2024-25")
+- **Row 2**: Column headers
+- **Row 3+**: Student data in two-row format (main data + date of birth)
 
 ### Field Mappings
 | Excel Column | UI Field | Database Field |
